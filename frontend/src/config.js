@@ -1,4 +1,4 @@
-export const AUCTION_ADDRESS = '0x0a6Bb81379Ef18838Fa17d0Fa7aB5fa4f8ada63D'
+export const AUCTION_ADDRESS = '0x8F84ade0ED18DBde8f30C9abD18949Bb64D706B6'
 
 export const AUCTION_ABI = [
   {
