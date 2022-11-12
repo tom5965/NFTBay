@@ -1,58 +1,34 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS } from './config'
+
+import React from 'react';
+import {BrowserRouter, BrowserRouter as Routes,Route} from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
 
 function App() {
-  const [account, setAccount] = useState();
-  const [contract, setContract] = useState();
-  const [auctionInstances, setAuctionInstances] = useState([]);
-  const [newAuctionName, setNewAuctionName] = useState('');
-  const [startingPrice, setStartingPrice] = useState(0);
-
-  useEffect(() => {
-    async function loadAccount() {
-      const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-      const accounts = await web3.eth.requestAccounts()
-      setAccount(accounts[0])
-    }
-
-    async function loadContract() {
-      const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-      const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
-      setContract(auctionContract);
-
-      auctionContract.events.AuctionInstanceCreated({
-        fromBlock: 'latest'
-      }, (error, event) => loadAuctionInstances(auctionContract));
-
-      loadAuctionInstances(auctionContract);
-    }
-
-    async function loadAuctionInstances(contract) {
-      setAuctionInstances([])
-      const auctionInstanceCount = await contract.methods.auctionInstanceCount().call()
-
-      for (var i = 1; i <= auctionInstanceCount; i++) {
-        const auctionInstance = await contract.methods.auctionInstances(i).call()
-        setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-      }
-  }
-
-    loadAccount()
-    loadContract()
-    window.ethereum.on('accountsChanged', function (accounts) {
-      setAccount(accounts[0])
-    })
-  }, [])
-
-  function createAuctionInstance(name, startingPrice) {
-    contract.methods.createAuctionInstance(name, startingPrice)
-    .send({ from: account })
-  }
+  
 
   return(
-    <div>
+    <>
+      <div className = 'App'>
+
+          <Routes>
+      
+            <Route exact path = '/' element={<Home />} />
+            <Route path = '/login' component={Login}/>
+
+          </Routes>
+      </div>
+      
+        
+      </>
+  );
+}
+
+export default App;
+
+{/* <div>
       Your account is: {account}
     <form onSubmit={(event) => {
       event.preventDefault()
@@ -72,8 +48,4 @@ function App() {
         )
       })}
     </ul>
-    </div>
-  )
-}
-
-export default App;
+    </div> */}
