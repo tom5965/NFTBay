@@ -302,12 +302,16 @@ export default function Blog() {
 
                 <Toolbar></Toolbar>
                 <main>
+                    {account != null? <div>
                     <Grid container spacing={4} sx={{ height: 300 }}>
                         {featuredPosts.map((post) => (
                             <FeaturedPost key={post.title} post={post} />
                         ))}
                     </Grid>
-                    <Grid container spacing={5} sx={{ mt: 3 }}>
+                    <Grid sx={{mb:10}}></Grid>
+                    </div> :null}
+
+                    <Grid container spacing={5} >
                         <Main title="전체 상품 보기" />
 
                     </Grid>
