@@ -1,4 +1,6 @@
 export const AUCTION_ADDRESS = '0x8F84ade0ED18DBde8f30C9abD18949Bb64D706B6'
+//For local blockchain(Ganache)
+//export const AUCTION_ADDRESS = '0xb9BE5956EE12C6E5F01BA6f93D454c7cB02Fe64A'
 
 export const AUCTION_ABI = [
   {

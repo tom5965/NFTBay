@@ -52,9 +52,6 @@ const featuredPosts = [
     },
 ];
 
-
-
-
 const theme = createTheme();
 
 const darkTheme = createTheme({
@@ -70,6 +67,7 @@ export default function Blog() {
 
     //로그인
     const [isLogin, setLogin] = React.useState(false);
+    const [accountLoaded, setAccountLoaded] = React.useState(false);
 
 
     //login modal
@@ -85,11 +83,10 @@ export default function Blog() {
 
     //login창
     const startLogin = async (e) => {
-        //console.log("startLogin in");
+        setAccountLoaded(false);
         loadAccount()
-        loadContract()
-        window.ethereum.on('accountsChanged', function (accounts) {
-            setAccount(accounts[0])
+        .then(() => {
+            loadContract()
         })
     };
 
@@ -100,13 +97,30 @@ export default function Blog() {
     const [startingPrice, setStartingPrice] = React.useState(0);
 
     async function loadAccount() {
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        if (typeof window.ethereum == 'undefined') {
+            console.log('There is no wallets')
+            window.open('https://metamask.io/download/').focus()
+            return
+        }
+
+        if (!window.ethereum.isMetaMask) {
+            console.log('There is no metamask.')
+            window.open('https://metamask.io/download/').focus()
+            return
+        }
         
         await window.ethereum.request({
             method: 'wallet_requestPermissions',
             params: [{ eth_accounts: {}}],
         }).then((permissions) => {
-            setAccount(permissions[0].caveats[0].value[0]);
+            setAccount(permissions[0].caveats[0].value[0])
+            setAccountLoaded(true)
+
+            window.ethereum.on('accountsChanged', function (accounts) {
+                setAccount(accounts[0])
+            })
+
+            handleClose()
         })
     }
 
@@ -131,12 +145,6 @@ export default function Blog() {
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
         }
     }
-
-    React.useEffect(() => {
-        
-
-        
-    }, [])
 
     function createAuctionInstance(name, startingPrice) {
         contract.methods.createAuctionInstance(name, startingPrice)
