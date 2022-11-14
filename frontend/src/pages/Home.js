@@ -76,8 +76,6 @@ const featuredPosts = [
 ];
 
 
-
-
 const theme = createTheme();
 
 const darkTheme = createTheme({
@@ -95,6 +93,7 @@ export default function Blog() {
     const [isLogin, setLogin] = React.useState(false);
     const [accountLoaded, setAccountLoaded] = React.useState(false);
 
+
     //login modal
     const [modalOpen, setOpen] = React.useState(false);
     const handleOpen = () => setOpen(true);
@@ -109,7 +108,10 @@ export default function Blog() {
     //login창
     const startLogin = async (e) => {
         setAccountLoaded(false);
-        loadAccount().then(() => {
+
+
+        loadAccount()
+        .then(() => {
             loadContract()
         })
     };
