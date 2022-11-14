@@ -43,12 +43,35 @@ import ListItemText from '@mui/material/ListItemText';
 
 import Switch from '@mui/material/Switch';
 
+const buy = [
+    {name:'Wassie 10352', cost : 0.6,
+     img : 'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'},
+
+     {name : 'Wassie 2651', cost : 0.6142,
+    img: 'https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'},
+    
+];
+
+const sell = [
+    {name : '#80', cost : 0.085,
+    img:'https://i.seadn.io/gae/tk8c7kTX_euzFuLP_6rl_f_1ZPMMFNEEu5AqjdlzMOzl0zzbfIqyKZAkVetmToq299M1ger-k9D0F7Pyaoe9ndf_aEj6UHnhWnq-fg?auto=format&w=512'},
+
+    {name : '7330', cost: 58.300,
+    img : 'https://img.seadn.io/files/f4e7af0cf0d55d6529e43efbb68427ea.png?auto=format&fit=max&w=512'},
+
+    {name : 'Pudgy Penguin #3139', cost : 2.5946,
+    img:'https://img.seadn.io/files/82f60175d1c642299b0e4c8aa8ea7d14.png?auto=format&fit=max&w=512' },
+
+];
+
 const featuredPosts = [
     {
         title: '호가 내역',
+        list : buy,
     },
     {
         title: '등록 컬렉션',
+        list : sell,
     },
 ];
 
@@ -70,7 +93,7 @@ export default function Blog() {
 
     //로그인
     const [isLogin, setLogin] = React.useState(false);
-
+    const [accountLoaded, setAccountLoaded] = React.useState(false);
 
     //login modal
     const [modalOpen, setOpen] = React.useState(false);
@@ -85,11 +108,9 @@ export default function Blog() {
 
     //login창
     const startLogin = async (e) => {
-        //console.log("startLogin in");
-        loadAccount()
-        loadContract()
-        window.ethereum.on('accountsChanged', function (accounts) {
-            setAccount(accounts[0])
+        setAccountLoaded(false);
+        loadAccount().then(() => {
+            loadContract()
         })
     };
 
@@ -100,13 +121,31 @@ export default function Blog() {
     const [startingPrice, setStartingPrice] = React.useState(0);
 
     async function loadAccount() {
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+
+        if (typeof window.ethereum == 'undefined') {
+            console.log('There is no wallets')
+            window.open('https://metamask.io/download/').focus()
+            return
+        }
+
+        if (!window.ethereum.isMetaMask) {
+            console.log('There is no metamask.')
+            window.open('https://metamask.io/download/').focus()
+            return
+        }
         
         await window.ethereum.request({
             method: 'wallet_requestPermissions',
             params: [{ eth_accounts: {}}],
         }).then((permissions) => {
-            setAccount(permissions[0].caveats[0].value[0]);
+            setAccount(permissions[0].caveats[0].value[0])
+            setAccountLoaded(true)
+
+            window.ethereum.on('accountsChanged', function (accounts) {
+                setAccount(accounts[0])
+            })
+
+            handleClose()
         })
     }
 
@@ -131,12 +170,6 @@ export default function Blog() {
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
         }
     }
-
-    React.useEffect(() => {
-        
-
-        
-    }, [])
 
     function createAuctionInstance(name, startingPrice) {
         contract.methods.createAuctionInstance(name, startingPrice)

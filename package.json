@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@mui-treasury/components": "^1.10.1",
+    "@mui-treasury/styles": "^1.13.1",
+    "react-google-font-loader": "^1.1.0"
+  }
+}
