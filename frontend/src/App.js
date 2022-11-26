@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import React from 'react';
 import {BrowserRouter, BrowserRouter as Routes,Route} from 'react-router-dom';
 import Home from './pages/Home';
-// import Login from './pages/Login';
+import Detail from './pages/Detail';
 
 function App() {
   
@@ -16,7 +16,7 @@ function App() {
           <Routes>
       
             <Route exact path = '/' element={<Home />} />
-            
+            <Route path = '/Detail' element={<Detail />} />
 
           </Routes>
       </div>
