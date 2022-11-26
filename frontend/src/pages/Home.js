@@ -203,11 +203,39 @@ export default function Blog() {
     async function loadAuctionInstances(contract) {
         setAuctionInstances([])
         const auctionInstanceCount = await contract.methods.auctionInstanceCount().call()
+
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
         
         for (var i = 0; i < auctionInstanceCount; i++) {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
-            console.log(auctionInstance);
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
+            const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+            const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
+            const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
+            console.log(ipfsAddress);
+
+            fetch(ipfsAddress)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+                fetch(imageIpfsAddress)
+                .then(imageData => {
+                    console.log(imageData);
+                });
+            });
+      
+            /*
+            const ipfsAPI = require('ipfs-api');
+
+            //ipfs importing
+            const ipfs = ipfsAPI('192.168.0.8' ,'5001', {protocol: 'http'})
+
+            ipfs.files.get(ipfsAddress, (err,files)=>{
+                console.log(err)
+                console.log(files)
+            })
+            */   
         }
         
     }
