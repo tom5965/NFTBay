@@ -15,7 +15,7 @@ render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/Detail" element = {<Detail/>} />
+      <Route path = '/Detail' element={<Detail />} />
     </Routes>
   </BrowserRouter>,
   rootElement

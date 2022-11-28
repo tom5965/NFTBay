@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
@@ -41,6 +41,8 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 
 import { useBlogTextInfoContentStyles } from '@mui-treasury/styles/textInfoContent/blog';
 import { useOverShadowStyles } from '@mui-treasury/styles/shadow/over';
+import { getFormControlLabelUtilityClasses } from '@mui/material';
+
 
 const useStyles = makeStyles(({ breakpoints, spacing }) => ({
   root: {
@@ -85,7 +87,7 @@ const useStyles = makeStyles(({ breakpoints, spacing }) => ({
       left: 0,
       width: '100%',
       height: '100%',
-    //   backgroundImage: 'linear-gradient(147deg, #fe8a39 0%, #fd3838 74%)',
+      //   backgroundImage: 'linear-gradient(147deg, #fe8a39 0%, #fd3838 74%)',
       borderRadius: spacing(2), // 16
       opacity: 0.5,
     },
@@ -105,7 +107,7 @@ const useStyles = makeStyles(({ breakpoints, spacing }) => ({
     width: '80%',
     marginRight: spacing(3),
   },
-  bidButton:{
+  bidButton: {
     borderRadius: 20,
     padding: '0.125rem 0.75rem',
     fontSize: '1rem',
@@ -113,239 +115,321 @@ const useStyles = makeStyles(({ breakpoints, spacing }) => ({
 }));
 
 const columns = [
-    { field: 'id', headerName: 'NUM', width: 150 },
-    {
-      field: 'bid',
-      headerName: '응찰가',
-      width: 250,
-      type: 'number',
-      editable: true,
-    },
-    {
-      field: 'bidTime',
-      headerName: 'Date',
-      width: 250,
-      editable: true,
-    },
-    {
-      field: 'Bidder',
-      headerName: '응찰자 주소',
-      width: 400,
-      editable: true,
-    },
-  ];
+  { field: 'id', headerName: 'NUM', width: 150 },
+  {
+    field: 'bid',
+    headerName: '응찰가',
+    width: 250,
+    type: 'number',
+    editable: true,
+  },
+  {
+    field: 'bidTime',
+    headerName: 'Date',
+    width: 250,
+    editable: true,
+  },
+  {
+    field: 'Bidder',
+    headerName: '응찰자 주소',
+    width: 400,
+    editable: true,
+  },
+];
+
+// const rows = [
+//   ,
+//   { id: 2, bid: '8', bidTime: '2022.10.7 10:55', Bidder: 42 },
+//   { id: 3, bid: '12', bidTime: '2022.10.7 10:55', Bidder: 45 },
+//   { id: 4, bid: '45', bidTime: '2022.10.7 10:55', Bidder: 16 },
+//   { id: 5, bid: '65', bidTime: '2022.10.7 10:55', Bidder: null },
+//   { id: 6, bid: '23', bidTime: '2022.10.7 10:55', Bidder: 150 },
+//   { id: 7, bid: '0.23', bidTime: '2022.10.7 10:55', Bidder: 44 },
+//   { id: 8, bid: '1', bidTime: '2022.10.7 10:55', Bidder: 36 },
+//   { id: 9, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 65 },
+// ];
+
+const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545');
+const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS);
 
 
-  const rows = [
-    { id: 1, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 35 },
-    { id: 2, bid: '8', bidTime: '2022.10.7 10:55', Bidder: 42 },
-    { id: 3, bid: '12', bidTime: '2022.10.7 10:55', Bidder: 45 },
-    { id: 4, bid: '45', bidTime: '2022.10.7 10:55', Bidder: 16 },
-    { id: 5, bid: '65', bidTime: '2022.10.7 10:55', Bidder: null },
-    { id: 6, bid: '23', bidTime: '2022.10.7 10:55', Bidder: 150 },
-    { id: 7, bid: '0.23', bidTime: '2022.10.7 10:55', Bidder: 44 },
-    { id: 8, bid: '1', bidTime: '2022.10.7 10:55', Bidder: 36 },
-    { id: 9, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 65 },
-  ];
-export default function Detail(props){
-    const {detailInfo} = props;
-    const navigate = useNavigate();
-     //LOGO 클릭 시 main 화면으로 이동
-     const toMain = () => {
-        navigate("/");
+export default function Detail({ route }) {
+  // const tokenId = route.params.id;
+  // alert("in");
+  // const { search } = useParams;	// 문자열 형식으로 결과값이 반환된다.
+
+  const [searchparams] = useSearchParams();
+  const [auctionLogs, setAuctionLogs] = React.useState([]);
+  const [contract, setContract] = React.useState();
+  const [rows, setRow] = React.useState([]);
+
+  const tokenId = searchparams.get("tokenId");
+  const tokenAddress = searchparams.get("tokenAddress");
+  const highestBid = searchparams.get("highestBid");
+  const endTime = searchparams.get("auctionEndTime");
+  const auctionId = searchparams.get("auctionId");
+  const account = searchparams.get("account");
+
+
+  var date = new Date(endTime * 1000);
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+
+  const [bidValue, setbidValue] = React.useState(0);
+  const bidChange = (event) => {
+    setbidValue(event.target.value);
+  };
+
+
+  // console.log(contract);
+  const navigate = useNavigate();
+  //LOGO 클릭 시 main 화면으로 이동
+  const toMain = () => {
+    navigate("/");
+  }
+
+
+  //유저 아이콘 클릭시
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const id = open ? 'simple-popper' : undefined;
+
+  const handleClick = (event) => {
+    setAnchorEl(anchorEl ? null : event.currentTarget);
+  };
+
+
+
+  const styles = useStyles();
+  const {
+    button: buttonStyles,
+    ...contentStyles
+  } = useBlogTextInfoContentStyles();
+  const shadowStyles = useOverShadowStyles();
+
+
+  const [mainDetail, setmainDetail] = React.useState(true);
+
+  const detailMainClick = (event) => {
+    setmainDetail(!mainDetail);
+  };
+
+  function detailPopup(auctionInstanceId) {
+    auctionContract.events.AuctionLogCreated({
+      fromBlock: 'latest'
+    }, (error, event) => onLogAdded(event.auctionInstanceId))
+  }
+
+  async function onLogAdded(auctionId) {
+    loadLogs(auctionId);
+  }
+
+  async function loadLogs(auctionId) {
+    const auctionLog = await auctionContract.methods.getAuctionLogs(auctionId).call()
+    console.log(auctionLog);
+    let tmpArray = []
+    for (var i = 0; i < auctionLog.length; i++) {
+
+      let date = new Date(auctionLog[i].bidTime * 1000);
+      let year = date.getFullYear();
+      let month = date.getMonth();
+      let day = date.getDate();
+      let hour = date.getHours();
+      let min = date.getMinutes();
+      let sec = date.getSeconds();
+
+      let tmpTime = year + "." + month + "." + day + " " + hour + ":" + min + ":" + sec;
+
+      let tmp = {
+        id: i + 1,
+        bid: auctionLog[i].bidPrice,
+        bidTime: tmpTime,
+        Bidder: auctionLog[i].bidder
+      };
+
+      tmpArray.push(tmp);
     }
+    setRow([...tmpArray]);
+  }
+
+  function bid() {
+    auctionContract.methods.bid(auctionId, bidValue)
+      .send({ from: account })
+  }
+
+  loadLogs(auctionId);
+  //console.log()
+
+  return (
+    <>
+      <Container maxWidth="lg">
+        <React.Fragment>
+
+          <Toolbar label={'margin = "normal"'} sx={{ marginBottom: 5 }}>
+
+            <Button onClick={toMain}>
+              <img src={Logoicon}></img>
+
+            </Button>
+            <Typography
+              component="h2"
+              variant="h5"
+              color="inherit"
+              align="center"
+              noWrap
+              sx={{ flex: 1 }}
+            >
+              <Paper
+                component="form"
+                sx={{ display: 'flex', alignItems: 'center', width: 900 }}
+              >
+                <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
+                  <SearchIcon />
+                </IconButton>
+                <InputBase
+                  sx={{ ml: 1, flex: 1 }}
+                  placeholder="어떤 컬렉션을 찾으세요?"
+                  inputProps={{ 'aria-label': 'search google maps' }}
+                  fullWidth
+                />
+
+              </Paper>
+
+            </Typography>
 
 
-    //유저 아이콘 클릭시
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const open = Boolean(anchorEl);
-    const id = open ? 'simple-popper' : undefined;
+            <div>
+              <IconButton onClick={handleClick}>
+                <AccountCircleIcon fontSize="large"></AccountCircleIcon>
 
-    const handleClick = (event) => {
-        setAnchorEl(anchorEl ? null : event.currentTarget);
-    };
+              </IconButton>
 
 
-
-    const styles = useStyles();
-    const {
-        button: buttonStyles,
-        ...contentStyles
-      } = useBlogTextInfoContentStyles();
-      const shadowStyles = useOverShadowStyles();
-
-    
-    const [mainDetail,setmainDetail] = React.useState(true);
-
-    const detailMainClick = (event) => {
-        setmainDetail(!mainDetail);    
-    };
-
-    return(
-        <>
-    <Container maxWidth="lg">
-<React.Fragment>
-
-<Toolbar label={'margin = "normal"'} sx={{marginBottom:5}}>
-
-    <Button onClick={toMain}>
-        <img src={Logoicon}></img>
-
-    </Button>
-    <Typography
-        component="h2"
-        variant="h5"
-        color="inherit"
-        align="center"
-        noWrap
-        sx={{ flex: 1 }}
-    >
-        <Paper
-            component="form"
-            sx={{ display: 'flex', alignItems: 'center', width: 900 }}
-        >
-            <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
-                <SearchIcon />
-            </IconButton>
-            <InputBase
-                sx={{ ml: 1, flex: 1 }}
-                placeholder="어떤 컬렉션을 찾으세요?"
-                inputProps={{ 'aria-label': 'search google maps' }}
-                fullWidth
-            />
-
-        </Paper>
-
-    </Typography>
-
-
-    <div>
-        <IconButton onClick={handleClick}>
-            <AccountCircleIcon fontSize="large"></AccountCircleIcon>
-
-        </IconButton>
-
-
-        <Popper id={id} open={open} anchorEl={anchorEl}>
-            <Box sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
-                <nav aria-label="main mailbox folders">
+              <Popper id={id} open={open} anchorEl={anchorEl}>
+                <Box sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
+                  <nav aria-label="main mailbox folders">
                     <List>
-                        <ListItem disablePadding>
-                            <ListItemButton>
-                                <ListItemIcon>
-                                    <AddBusinessIcon />
-                                </ListItemIcon>
-                                <ListItemText primary="상품 등록" />
-                            </ListItemButton>
-                        </ListItem>
+                      <ListItem disablePadding>
+                        <ListItemButton>
+                          <ListItemIcon>
+                            <AddBusinessIcon />
+                          </ListItemIcon>
+                          <ListItemText primary="상품 등록" />
+                        </ListItemButton>
+                      </ListItem>
 
                     </List>
-                </nav>
-            </Box>
+                  </nav>
+                </Box>
 
-        </Popper>
-    </div>
+              </Popper>
+            </div>
 
-</Toolbar>
-</React.Fragment>
+          </Toolbar>
+        </React.Fragment>
 
 
-      {mainDetail? <Card className={cx(styles.root, shadowStyles.root)} sx={{marginTop:50,}}> <CardMedia
-        className={styles.media}
-        image={
-          'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
-        }
-      />
-      <CardContent>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-        <TextInfoContent
-          classes={contentStyles}
-          overline={'#경매품 번호'}
-          heading={'경매품 이름'}
-          
+        {mainDetail ? <Card className={cx(styles.root, shadowStyles.root)} sx={{ marginTop: 50, }}> <CardMedia
+          className={styles.media}
+          image={
+            'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
+          }
         />
-        </Grid>
-        
-        <Grid item xs={12} sm={5}>
-        <TextInfoContent
-          classes={contentStyles}
-          overline={'현재가'}
-          heading={'경매품 가격'}
-          
-        />
-        </Grid>
-        <Grid item xs={12} sm={5}>
-        <TextInfoContent
-          classes={contentStyles}
-          overline={'경매 종료 일자'}
-          heading={'경매 종료일'}
-          
-        />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-            
-            <IconButton onClick={detailMainClick}><NavigateNextIcon fontSize="large"/></IconButton>
-        </Grid>
-        <Grid item xs={12} sm={8}>
-        <Row>
-        <TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField} />
-        <IconButton><SendIcon fontSize="medium"/></IconButton>
-        </Row>  
-        </Grid>
-        
-        
-      </Grid>
-        
-      </CardContent> </Card>:
-      
-      <Card  sx={{marginTop:50,}}> 
-      
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextInfoContent
+                  classes={contentStyles}
+                  overline={'#경매품 번호'}
+                  heading={tokenId}
 
-      <CardContent>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-        <TextInfoContent
-          classes={contentStyles}
-          heading={'History'}
-          
-        />
-        </Grid>
-           
-      </Grid>
-      <Row>
-      
-      <IconButton onClick={detailMainClick}><NavigateBeforeIcon fontSize="large"/></IconButton>
-      <div style={{ height: 400, width: '100%' }}>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        pageSize={6}
-      />
-    </div>
-      </Row>
-      
-        
-      </CardContent> </Card>}
-    
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={5}>
+                <TextInfoContent
+                  classes={contentStyles}
+                  overline={'현재가'}
+                  heading={highestBid}
+
+                />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextInfoContent
+                  classes={contentStyles}
+                  overline={'경매 종료 일자'}
+                  heading={year + "/" + month + "/" + day}
+
+                />
+              </Grid>
+              <Grid item xs={12} sm={2}>
+
+                <IconButton onClick={detailMainClick}><NavigateNextIcon fontSize="large" /></IconButton>
+              </Grid>
+              <Grid item xs={12} sm={8}>
+                <Row>
+                  <TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
+                    onChange={bidChange} />
+                  <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton>
+                </Row>
+              </Grid>
 
 
+            </Grid>
 
-        
-</Container>
-        
-        
-        </>
-    );
+          </CardContent> </Card> :
+
+          <Card sx={{ marginTop: 50, }}>
+
+
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextInfoContent
+                    classes={contentStyles}
+                    heading={'History'}
+
+                  />
+                </Grid>
+
+              </Grid>
+              <Row>
+
+                <IconButton onClick={detailMainClick}><NavigateBeforeIcon fontSize="large" /></IconButton>
+                <div style={{ height: 400, width: '100%' }}>
+                  <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    pageSize={6}
+                  />
+                </div>
+              </Row>
+
+
+            </CardContent> </Card>}
+
+
+
+
+
+      </Container>
+
+
+    </>
+  );
 };
 
 Detail.propTypes = {
-    post: PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      address: PropTypes.string.isRequired,
-      end_date: PropTypes.string.isRequired,
-      highest_bid: PropTypes.number.isRequired,
-      highest_bidder : PropTypes.string.isRequired,
-      bidder_list: PropTypes.array.isRequired,
-    }).isRequired,
-  };
+  post: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    address: PropTypes.string.isRequired,
+    end_date: PropTypes.string.isRequired,
+    highest_bid: PropTypes.number.isRequired,
+    highest_bidder: PropTypes.string.isRequired,
+    bidder_list: PropTypes.array.isRequired,
+  }).isRequired,
+};
+
+

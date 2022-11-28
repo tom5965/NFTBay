@@ -158,7 +158,7 @@ export default function Blog() {
     const [auctionInstances, setAuctionInstances] = React.useState([]);
     const [newAuctionName, setNewAuctionName] = React.useState('');
     const [startingPrice, setStartingPrice] = React.useState(0);
-
+    
     async function loadAccount() {
 
         if (typeof window.ethereum == 'undefined') {
@@ -212,7 +212,7 @@ export default function Blog() {
             const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
             const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
             const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
-            console.log(ipfsAddress);
+            //console.log(ipfsAddress);
 
             fetch(ipfsAddress)
             .then(response => response.json())
@@ -221,23 +221,11 @@ export default function Blog() {
                 const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
                 fetch(imageIpfsAddress)
                 .then(imageData => {
-                    console.log(imageData);
+                    //console.log(imageData);
                 });
-            });
-      
-            /*
-            const ipfsAPI = require('ipfs-api');
-
-            //ipfs importing
-            const ipfs = ipfsAPI('192.168.0.8' ,'5001', {protocol: 'http'})
-
-            ipfs.files.get(ipfsAddress, (err,files)=>{
-                console.log(err)
-                console.log(files)
-            })
-            */   
+            }); 
         }
-        
+        console.log(auctionInstances);        
     }
 
     function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
@@ -284,9 +272,9 @@ export default function Blog() {
 
     const registerClose_R = () => {
         setRegisterOpen(false);
-        var dueDate = dueDayValue + "T23:59:59";
+        var dueDate = dueDayValue + "T23:59:59.000Z";
         var date = new Date(dueDate).getTime();
-
+        
         createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), date);
 
     }
@@ -578,7 +566,7 @@ export default function Blog() {
 
                     </Grid>
 
-                    <Listup />
+                    {auctionInstances.length == 0? null : <Listup key="list" list={auctionInstances} account = {account}/>}
 
                 </main>
             </Container>
