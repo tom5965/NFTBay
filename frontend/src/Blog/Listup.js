@@ -8,6 +8,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Avatar from '@material-ui/core/Avatar';
 import PropTypes from 'prop-types';
 import { useNavigate, useNavigation, useParams, NavLink, createSearchParams } from 'react-router-dom';
+import { useAsync, Async, createInstance } from 'react-async';
 
 import Button from '@material-ui/core/Button';
 import Detail from '../pages/Detail';
@@ -22,7 +23,10 @@ import {
 } from '@mui-treasury/components/info';
 import { useGrowAvatarStyles } from '@mui-treasury/styles/avatar/grow';
 import { useMusicInfoStyles } from '@mui-treasury/styles/info/music';
+import { resolve } from 'path';
+import SelectInput from '@material-ui/core/Select/SelectInput';
 
+import wait from "waait";
 
 
 
@@ -50,81 +54,35 @@ const useStyles = makeStyles(() => ({
     },
 }));
 
+
 let num = 0;
 
+let data = []
+let name = []
+
+let count = 0;
+
+const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
 
 
-const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime,id,account }) => {
-
-    
+const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime, id, account }) => {
+    console.log("Listiem");
     const commonProps = {
         blur: '12px',
         radius: 16,
         size: 48,
         opacity: 0.6,
     };
-    
-    
-    
-    async function loadAuctionInstances(contract, tokenAddress, tokenId) {
 
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-
-        // setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-        const nftContract = new web3.eth.Contract(TOKENURIABI, tokenAddress);
-        const result = await nftContract.methods.tokenURI(tokenId).call();
-
-        
-        
-        const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
-        // return ipfsAddress;
-
-        return await new Promise((resolve) =>{resolve(ipfsAddress.image)});
-    //    console.log(ipfsAddress.image);
-       
-        // fetch(ipfsAddress)
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
-        //         fetch(imageIpfsAddress)
-        //             .then(imageData => {
-        //                 var src = imageData.url;
-        //                 return src;
-        //                 // return new Promise(resolve=>{
-        //                 //     setTimeout(()=>{
-        //                 //         resolve(src);
-        //                 //         console.log(src);
-        //                 //     },2000);
-        //                 // })
-        //             });
-        //     });
-
-    }
-
-    var getImage = async function(auctionContract, tokenAddress, tokenId){
-        var result = await loadAuctionInstances(auctionContract, tokenAddress, tokenId);
-        //console.log(result);
-    }
-    //let src = ''
-    let src = 'ipfs.io/ipfs/QmZ8EAHYWKoGyk5PuJxAts8ZmzhraPusD5MtApp79hFUbp'
+    let src = ''
+    //let src = 'ipfs://QmYhbk2FKxeihT8NC7qGvCEuNTB8yyALP4yrQPWYRc6ZHQ'
     const avatarStyles = useGrowAvatarStyles({ src, ...commonProps });
     const navigate = useNavigate();
 
 
     const styles = useStyles();
-
-    const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-    const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS);
-
-    loadAuctionInstances(auctionContract, tokenAddress, tokenId).then((result)=>{console.log(result)});
-    console.log(src);
-    // .then(
-    //     result => {
-    //         src = result;
-    //     }
-    // )
-
-    // console.log(src);
+    const tmpName = name[num];
     num += 1;
     return (
         <Row mt={2}>
@@ -133,17 +91,19 @@ const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime,id,account
             </Item>
             <Item>
                 <div className={avatarStyles.root} >
-                {/* <IpfsImage hash={src}></IpfsImage> */}
-                    {/* <Avatar  src={src} /> */}
-                    <Avatar sx={{ ml: 10, mr: 10 }}>
-                    
+
+
+                    <Avatar sx={{ ml: 10, mr: 10, display: 'table' }} src={data[num - 1]}>
+
                     </Avatar>
-                    
+
+
                 </div>
             </Item>
 
             <Info useStyles={useMusicInfoStyles} minWidth={0} position={'middle'}>
-                <InfoTitle> <h3># {tokenId}</h3></InfoTitle>
+                <InfoTitle> <h3># {tokenId} </h3> </InfoTitle>
+                {/* <h4>{name[num-1]}</h4> */}
             </Info>
             <Info useStyles={useMusicInfoStyles} position={'right'}>
                 <InfoSubtitle> <h4>{highestBid} WEI</h4></InfoSubtitle>
@@ -157,12 +117,13 @@ const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime,id,account
                     navigate({
                         pathname: '/Detail',
                         search: createSearchParams({
-                            tokenId:  tokenId ,
+                            tokenId: tokenId,
                             tokenAddress: tokenAddress,
-                            highestBid : highestBid,
-                            auctionEndTime : auctionEndTime,
+                            highestBid: highestBid,
+                            auctionEndTime: auctionEndTime,
                             auctionId: id,
-                            account : account,
+                            account: account,
+                            name: tmpName,
                         }).toString()
                     });
                 }}>
@@ -176,7 +137,40 @@ const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime,id,account
 };
 
 
+
+async function loading() {
+    const auctionInstanceCount = await auctionContract.methods.auctionInstanceCount().call();
+    count = auctionInstanceCount;
+
+    for (var i = 0; i < auctionInstanceCount; i++) {
+        const auctionInstance = await auctionContract.methods.getAuctionInstance(i).call();
+        const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+        console.log(auctionInstance.tokenAddress);
+        await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+        const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
+
+        const ipfsAddress = await result.replace("ipfs://", "https://ipfs.io/ipfs/");
+
+        const response = await fetch(ipfsAddress);
+        const res_json = await response.json();
+
+        name.push(res_json.name);
+
+        const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+
+        const imageData = await fetch(imageIpfsAddress);
+        const _img = await imageData.url;
+        data.push(_img);
+
+    }
+}
+
+const AsyncPlayer2 = createInstance({ promiseFn: loading }, "AsyncPlayer2");
+
+
 function Listup(props, { navigation }) {
+    num = 0;
+
     const commonProps = {
         // blur: '12px',
         radius: 16,
@@ -186,20 +180,11 @@ function Listup(props, { navigation }) {
 
 
     const { list } = props;
-    const {account} = props;
+    const { account } = props;
 
     const src =
         'https://cdn1.vectorstock.com/i/1000x1000/85/40/music-abstract-poster-cover-1980s-style-background-vector-11958540.jpg';
     const avatarStyles = useGrowAvatarStyles({ src, ...commonProps });
-
-    //   for(var i = 0; i<list.length;i++){
-    //     let tokenAddress = list[i].tokenAddress;
-    //     let tokenId = list[i].tokenId;
-    //     let bid = list[i].highestBid;
-
-
-    //   }
-
 
     const styles = useStyles();
     const navigate = useNavigate();
@@ -212,12 +197,14 @@ function Listup(props, { navigation }) {
             </NoSsr>
             <Column gap={2} width={'80%'}>
 
-                {(list).map(({ tokenId, tokenAddress, highestBid,auctionEndTime,id }) => (
-                    <ListItem key={tokenId} tokenId={tokenId} tokenAddress={tokenAddress} highestBid={highestBid} auctionEndTime = {auctionEndTime} id={id} account = {account}/>
+                <AsyncPlayer2>
+                    <AsyncPlayer2.Fulfilled>
+                        {(list).map(({ tokenId, tokenAddress, highestBid, auctionEndTime, id }) => (
+                            <ListItem key={tokenId} tokenId={tokenId} tokenAddress={tokenAddress} highestBid={highestBid} auctionEndTime={auctionEndTime} id={id} account={account} />
 
-                ))}
-
-
+                        ))}
+                    </AsyncPlayer2.Fulfilled>
+                </AsyncPlayer2>
             </Column>
         </>
     );

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
 
 import cx from 'clsx';
 import PropTypes from 'prop-types';
@@ -43,6 +43,7 @@ import { useBlogTextInfoContentStyles } from '@mui-treasury/styles/textInfoConte
 import { useOverShadowStyles } from '@mui-treasury/styles/shadow/over';
 import { getFormControlLabelUtilityClasses } from '@mui/material';
 
+import { useAsync,Async,createInstance } from 'react-async';
 
 const useStyles = makeStyles(({ breakpoints, spacing }) => ({
   root: {
@@ -149,8 +150,37 @@ const columns = [
 //   { id: 9, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 65 },
 // ];
 
+let tokenId = '';
+let tokenAddress = '';
+let tokenName = '';
+
 const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545');
 const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS);
+
+const loadAuctionInstances = async () => {
+    
+  //await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+
+  // setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
+  const nftContract = new web3.eth.Contract(TOKENURIABI, tokenAddress);
+  await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+  const result = await nftContract.methods.tokenURI(tokenId).call();
+
+  const ipfsAddress = await result.replace("ipfs://", "https://ipfs.io/ipfs/");
+  
+  console.log(ipfsAddress);
+  const response = await fetch(ipfsAddress);
+  const res_json = await response.json();
+  const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+
+  const imageData = await fetch(imageIpfsAddress);
+  const _img = await imageData.url;
+
+  return _img;
+
+}
+
+const AsyncPlayer = createInstance({promiseFn:loadAuctionInstances},"AsyncPlayer");
 
 
 export default function Detail({ route }) {
@@ -163,15 +193,16 @@ export default function Detail({ route }) {
   const [contract, setContract] = React.useState();
   const [rows, setRow] = React.useState([]);
 
-  const tokenId = searchparams.get("tokenId");
-  const tokenAddress = searchparams.get("tokenAddress");
+  tokenId = searchparams.get("tokenId");
+  tokenAddress = searchparams.get("tokenAddress");
   const highestBid = searchparams.get("highestBid");
   const endTime = searchparams.get("auctionEndTime");
   const auctionId = searchparams.get("auctionId");
   const account = searchparams.get("account");
+  const name = searchparams.get("name");
 
+  var date = new Date(Number(endTime));
 
-  var date = new Date(endTime * 1000);
   const year = date.getFullYear();
   const month = date.getMonth();
   const day = date.getDate();
@@ -331,20 +362,31 @@ export default function Detail({ route }) {
         </React.Fragment>
 
 
-        {mainDetail ? <Card className={cx(styles.root, shadowStyles.root)} sx={{ marginTop: 50, }}> <CardMedia
-          className={styles.media}
-          image={
-            'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
-          }
-        />
+        {mainDetail ? <Card className={cx(styles.root, shadowStyles.root)} sx={{ marginTop: 50, }}> 
+        <AsyncPlayer>
+                        <AsyncPlayer.Fulfilled>{
+                            result =>(
+                              <CardMedia
+                              className={styles.media}
+                              image={
+                                result
+                              }
+                            />
+                                
+                            )
+                            
+                            }
+                        
+                        </AsyncPlayer.Fulfilled>
+                    </AsyncPlayer>
+        
           <CardContent>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextInfoContent
                   classes={contentStyles}
-                  overline={'#경매품 번호'}
-                  heading={tokenId}
-
+                  overline={'#'+tokenId}
+                  heading={name}
                 />
               </Grid>
 

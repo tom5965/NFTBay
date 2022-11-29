@@ -209,23 +209,23 @@ export default function Blog() {
         for (var i = 0; i < auctionInstanceCount; i++) {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-            const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
-            const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
-            const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
-            //console.log(ipfsAddress);
+            // const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+            // const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
+            // const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
+            // //console.log(ipfsAddress);
 
-            fetch(ipfsAddress)
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
-                fetch(imageIpfsAddress)
-                .then(imageData => {
-                    //console.log(imageData);
-                });
-            }); 
+            // fetch(ipfsAddress)
+            // .then(response => response.json())
+            // .then(data => {
+            //     //console.log(data);
+            //     const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+            //     fetch(imageIpfsAddress)
+            //     .then(imageData => {
+            //         //console.log(imageData);
+            //     });
+            // }); 
         }
-        console.log(auctionInstances);        
+        // console.log(auctionInstances);        
     }
 
     function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
@@ -267,6 +267,9 @@ export default function Blog() {
         setRegisterOpen(true);
     };
     const registerCloseCancel = () => {
+        var dueDate = dueDayValue + "T23:59:59.000Z";
+        var date = new Date(dueDate).getTime();
+        console.log(new Date(date));
         setRegisterOpen(false);
     }
 
@@ -428,12 +431,12 @@ export default function Blog() {
                                     <DialogTitle id="form-dialog-title">상품 등록</DialogTitle>
                                     <DialogContent>
                                         <Row sx={{ width: '100%' }}>
-                                            <CardMedia
+                                            {/* <CardMedia
                                                 component="img"
                                                 sx={{ width: 200, alignItems: 'center' }}
                                                 image='https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'
                                                 alt="Live from space album cover"
-                                            />
+                                            /> */}
                                             <Column sx={{ marginLeft: 20, width: '100%' }}>
                                                 <Row>
                                                     <Grid item xs={12} sm={6}>

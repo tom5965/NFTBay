@@ -18,11 +18,13 @@
     "ipfs-api": "^26.1.2",
     "query-string": "^5.1.1",
     "react": "^18.2.0",
+    "react-async": "^10.0.1",
     "react-dom": "^18.2.0",
     "react-google-font-loader": "^1.1.0",
     "react-ipfs-image": "^0.7.0",
     "react-router-dom": "^6.4.3",
     "react-scripts": "^5.0.1",
+    "waait": "^1.0.5",
     "web-vitals": "^2.1.4",
     "web3": "^1.8.1"
   },
