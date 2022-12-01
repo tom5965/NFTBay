@@ -1,6 +1,6 @@
 //export const AUCTION_ADDRESS = '0x937A13ff16232736D52DEdAC5284E6BC8351dC8C'
 //For Mumbai testNet
-export const AUCTION_ADDRESS = '0x436B7DF09f9FbB390b278e87B02ea40aF081621E'
+export const AUCTION_ADDRESS = '0xdA79DE76b7603aD7300Ee173E8eBe96c914e18a9'
 
 export const AUCTION_ABI = [
   {
@@ -93,6 +93,16 @@ export const AUCTION_ABI = [
         "internalType": "uint256",
         "name": "auctionEndTime",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "received20Token",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "widthdrawFinished",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -188,6 +198,33 @@ export const AUCTION_ABI = [
         "type": "uint256"
       }
     ],
+    "name": "widthdrawFromAuctionInstance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_auctionInstanceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "receiveToken",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function",
+    "payable": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_auctionInstanceId",
+        "type": "uint256"
+      }
+    ],
     "name": "getAuctionInstance",
     "outputs": [
       {
@@ -226,6 +263,16 @@ export const AUCTION_ABI = [
             "internalType": "uint256",
             "name": "auctionEndTime",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "received20Token",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "widthdrawFinished",
+            "type": "bool"
           }
         ],
         "internalType": "struct Auction.AuctionInstance",

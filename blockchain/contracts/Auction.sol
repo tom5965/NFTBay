@@ -1,5 +1,7 @@
 pragma solidity ^0.8.17;
 
+import "./ERC721.sol";
+
 contract Auction {
     uint public auctionInstanceCount = 0;
 
@@ -11,6 +13,8 @@ contract Auction {
         uint highestBid;
         address highestBidder;
         uint auctionEndTime;
+        uint received20Token;
+        bool widthdrawFinished;
     }
 
     struct AuctionLog {
@@ -32,8 +36,11 @@ contract Auction {
     mapping(uint => AuctionLog[]) public auctionLogs;
 
     function createAuctionInstance(address tokenAddress, uint tokenId, uint startingPrice, uint auctionEndTime) external {
-        //Todo: Check if sender owns nft
-        auctionInstances[auctionInstanceCount] = AuctionInstance(auctionInstanceCount, msg.sender, tokenAddress, tokenId, startingPrice, msg.sender, auctionEndTime);
+        //Check if token belongs to owner
+        ERC721 tokenContract = ERC721(tokenAddress);
+        require(msg.sender == tokenContract.ownerOf(tokenId));
+        require(block.timestamp < auctionEndTime);
+        auctionInstances[auctionInstanceCount] = AuctionInstance(auctionInstanceCount, msg.sender, tokenAddress, tokenId, startingPrice, msg.sender, auctionEndTime, 0, false);
         emit AuctionInstanceCreated(auctionInstanceCount);
         auctionInstanceCount++;
         bid(auctionInstanceCount - 1, startingPrice);
@@ -47,10 +54,37 @@ contract Auction {
         AuctionInstance memory currentAuctionInstance = auctionInstances[_auctionInstanceId];
         if (bidPrice > currentAuctionInstance.highestBid)
         {
-            AuctionInstance memory newAuctionInstance = AuctionInstance(currentAuctionInstance.id, currentAuctionInstance.cosigner, currentAuctionInstance.tokenAddress, currentAuctionInstance.tokenId, bidPrice, msg.sender, currentAuctionInstance.auctionEndTime);
+            AuctionInstance memory newAuctionInstance = AuctionInstance(currentAuctionInstance.id, currentAuctionInstance.cosigner, currentAuctionInstance.tokenAddress, currentAuctionInstance.tokenId, bidPrice, msg.sender, currentAuctionInstance.auctionEndTime, 0, false);
             auctionInstances[_auctionInstanceId] = newAuctionInstance;
         }
         emit AuctionLogCreated(_auctionInstanceId, auctionLogs[_auctionInstanceId].length - 1);
+    }
+
+    function widthdrawFromAuctionInstance(uint _auctionInstanceId) external {
+        require(_auctionInstanceId < auctionInstanceCount);
+        AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
+        require(block.timestamp > auctionInstance.auctionEndTime);
+        require(msg.sender == auctionInstance.cosigner);
+
+        uint received20Token = auctionInstance.received20Token;
+        auctionInstance.received20Token = 0;
+        auctionInstance.widthdrawFinished = true;
+
+        (bool success, ) = payable(msg.sender).call{value: received20Token}("");
+        require(success);
+    }
+    
+    function receiveToken(uint _auctionInstanceId) external payable {
+        require(_auctionInstanceId < auctionInstanceCount);
+        AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
+        require(block.timestamp > auctionInstance.auctionEndTime);
+        require(msg.sender == auctionInstance.highestBidder);
+        //Check if balance is enough
+        require(msg.value >= auctionInstance.highestBid);
+        //Tranasfer bid, and get token
+        auctionInstance.received20Token += msg.value;
+        ERC721 tokenContract = ERC721(auctionInstance.tokenAddress);
+        tokenContract.transferFrom(auctionInstance.cosigner, msg.sender, auctionInstance.tokenId);
     }
 
     function getAuctionInstance(uint _auctionInstanceId) external view returns (AuctionInstance memory) {

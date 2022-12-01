@@ -33,6 +33,8 @@ contract("Auction", accounts => {
 
         for (var i = 0; i < testAuctionDatas.length; i++) {
             const testData = testAuctionDatas[i];
+            // Error when token owner-checking.
+            // If you want to test, comment the owner-checking require statement.
             await contractInstance.createAuctionInstance(testData.tokenAddress, testData.tokenId, testData.startingPrice, testData.auctionEndTime);
         }
 
