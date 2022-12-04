@@ -34,6 +34,8 @@ contract Auction {
 
     mapping(uint => AuctionInstance) public auctionInstances;
     mapping(uint => AuctionLog[]) public auctionLogs;
+    mapping(address => uint) public ownerAuctionInstanceCountMap;
+    mapping(address => uint[]) public biddedAuctionInstancesMap;
 
     function createAuctionInstance(address tokenAddress, uint tokenId, uint startingPrice, uint auctionEndTime) external {
         //Check if token belongs to owner
@@ -42,6 +44,7 @@ contract Auction {
         require(block.timestamp < auctionEndTime);
         auctionInstances[auctionInstanceCount] = AuctionInstance(auctionInstanceCount, msg.sender, tokenAddress, tokenId, startingPrice, msg.sender, auctionEndTime, 0, false);
         emit AuctionInstanceCreated(auctionInstanceCount);
+        ownerAuctionInstanceCountMap[msg.sender]++;
         auctionInstanceCount++;
         bid(auctionInstanceCount - 1, startingPrice);
     }
@@ -56,6 +59,22 @@ contract Auction {
         {
             AuctionInstance memory newAuctionInstance = AuctionInstance(currentAuctionInstance.id, currentAuctionInstance.cosigner, currentAuctionInstance.tokenAddress, currentAuctionInstance.tokenId, bidPrice, msg.sender, currentAuctionInstance.auctionEndTime, 0, false);
             auctionInstances[_auctionInstanceId] = newAuctionInstance;
+        }
+
+        if (msg.sender != currentAuctionInstance.cosigner) {
+            uint[] memory biddedAuctionInstances = biddedAuctionInstancesMap[msg.sender];
+            bool found = false;
+
+            for (uint i = 0; i < biddedAuctionInstances.length; i++) {
+                found = found || (biddedAuctionInstances[i] == _auctionInstanceId);
+                if (found) {
+                    break;
+                }
+            }
+
+            if (!found) {
+                biddedAuctionInstancesMap[msg.sender].push(_auctionInstanceId);
+            }
         }
         emit AuctionLogCreated(_auctionInstanceId, auctionLogs[_auctionInstanceId].length - 1);
     }
@@ -90,6 +109,28 @@ contract Auction {
     function getAuctionInstance(uint _auctionInstanceId) external view returns (AuctionInstance memory) {
         require(_auctionInstanceId < auctionInstanceCount);
         return auctionInstances[_auctionInstanceId];
+    }
+
+    function getCosignedAuctionInstances() external view returns (AuctionInstance[] memory) {
+        AuctionInstance[] memory results = new AuctionInstance[](ownerAuctionInstanceCountMap[msg.sender]);
+        uint counter = 0;
+        for (uint i = 0; i < auctionInstanceCount; i++) {
+            AuctionInstance memory auctionInstance = auctionInstances[i];
+            if (auctionInstance.cosigner == msg.sender) {
+                results[counter] = auctionInstance;
+                counter++;
+            }
+        }
+        return results;
+    }
+
+    function getBiddedAuctionInstances() external view returns (AuctionInstance[] memory) {
+        uint[] memory biddedAuctionInstances = biddedAuctionInstancesMap[msg.sender];
+        AuctionInstance[] memory results = new AuctionInstance[](biddedAuctionInstances.length);
+        for (uint i = 0; i < biddedAuctionInstances.length; i++) {
+            results[i] = auctionInstances[biddedAuctionInstances[i]];
+        }
+        return results;
     }
 
     function getAuctionLogs(uint _auctionInstanceId) external view returns (AuctionLog[] memory) {
