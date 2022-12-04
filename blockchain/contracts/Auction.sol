@@ -82,7 +82,8 @@ contract Auction {
     function endAuction(uint _auctionInstanceId) public {
         require(_auctionInstanceId < auctionInstanceCount);
         AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
-        require(block.timestamp < auctionInstances[_auctionInstanceId].auctionEndTime);
+        require(msg.sender == auctionInstance.cosigner);
+        require(block.timestamp < auctionInstance.auctionEndTime);
 
         AuctionInstance memory newAuctionInstance = AuctionInstance(auctionInstance.id, auctionInstance.cosigner, auctionInstance.tokenAddress, auctionInstance.tokenId, auctionInstance.highestBid, msg.sender, block.timestamp, 0, false);
         auctionInstances[_auctionInstanceId] = newAuctionInstance;
