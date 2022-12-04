@@ -51,17 +51,17 @@ contract Auction {
 
     function bid(uint _auctionInstanceId, uint bidPrice) public {
         require(_auctionInstanceId < auctionInstanceCount);
-        require(block.timestamp <= auctionInstances[_auctionInstanceId].auctionEndTime, "Auction Ends!");
+        AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
+        require(block.timestamp <= auctionInstance.auctionEndTime, "Auction Ends!");
 
         auctionLogs[_auctionInstanceId].push(AuctionLog(msg.sender, bidPrice, block.timestamp));
-        AuctionInstance memory currentAuctionInstance = auctionInstances[_auctionInstanceId];
-        if (bidPrice > currentAuctionInstance.highestBid)
+        if (bidPrice > auctionInstance.highestBid)
         {
-            AuctionInstance memory newAuctionInstance = AuctionInstance(currentAuctionInstance.id, currentAuctionInstance.cosigner, currentAuctionInstance.tokenAddress, currentAuctionInstance.tokenId, bidPrice, msg.sender, currentAuctionInstance.auctionEndTime, 0, false);
+            AuctionInstance memory newAuctionInstance = AuctionInstance(auctionInstance.id, auctionInstance.cosigner, auctionInstance.tokenAddress, auctionInstance.tokenId, bidPrice, msg.sender, auctionInstance.auctionEndTime, 0, false);
             auctionInstances[_auctionInstanceId] = newAuctionInstance;
         }
 
-        if (msg.sender != currentAuctionInstance.cosigner) {
+        if (msg.sender != auctionInstance.cosigner) {
             uint[] memory biddedAuctionInstances = biddedAuctionInstancesMap[msg.sender];
             bool found = false;
 
@@ -77,6 +77,15 @@ contract Auction {
             }
         }
         emit AuctionLogCreated(_auctionInstanceId, auctionLogs[_auctionInstanceId].length - 1);
+    }
+
+    function endAuction(uint _auctionInstanceId) public {
+        require(_auctionInstanceId < auctionInstanceCount);
+        AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
+        require(block.timestamp < auctionInstances[_auctionInstanceId].auctionEndTime);
+
+        AuctionInstance memory newAuctionInstance = AuctionInstance(auctionInstance.id, auctionInstance.cosigner, auctionInstance.tokenAddress, auctionInstance.tokenId, auctionInstance.highestBid, msg.sender, block.timestamp, 0, false);
+        auctionInstances[_auctionInstanceId] = newAuctionInstance;
     }
 
     function widthdrawFromAuctionInstance(uint _auctionInstanceId) external {
