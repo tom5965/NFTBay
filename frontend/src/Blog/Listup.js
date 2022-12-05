@@ -145,7 +145,6 @@ async function loading() {
     for (var i = 0; i < auctionInstanceCount; i++) {
         const auctionInstance = await auctionContract.methods.getAuctionInstance(i).call();
         const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
-        console.log(auctionInstance.tokenAddress);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
 
