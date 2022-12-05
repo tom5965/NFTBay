@@ -137,8 +137,6 @@ export default function Blog() {
 
     //로그인
     const [isLogin, setLogin] = React.useState(false);
-    const [accountLoaded, setAccountLoaded] = React.useState(false);
-
 
     //login modal
     const [modalOpen, setOpen] = React.useState(false);
@@ -150,27 +148,25 @@ export default function Blog() {
         setOpen(true);
     };
 
-
-    //login창
-    const startLogin = async (e) => {
-        setAccountLoaded(false);
-
-
-        loadAccount()
-            .then(() => {
-                loadContract()
-                
-            })
-    };
-
     const [account, setAccount] = React.useState();
     const [contract, setContract] = React.useState();
     const [auctionInstances, setAuctionInstances] = React.useState([]);
     const [newAuctionName, setNewAuctionName] = React.useState('');
     const [startingPrice, setStartingPrice] = React.useState(0);
+
+    React.useEffect(() => {
+        console.log(account);
+        if (typeof account !== 'undefined') {
+            loadContract(contract);
+        }
+    }, [account]);
+
+    //login창
+    const startLogin = async (e) => {
+        loadAccount()
+    };
     
     async function loadAccount() {
-
         if (typeof window.ethereum == 'undefined') {
             console.log('There is no wallets')
             window.open('https://metamask.io/download/').focus()
@@ -188,12 +184,10 @@ export default function Blog() {
             params: [{ eth_accounts: {} }],
         }).then((permissions) => {
             setAccount(permissions[0].caveats[0].value[0])
-            setAccountLoaded(true)
 
             window.ethereum.on('accountsChanged', function (accounts) {
                 setAccount(accounts[0])
             })
-
             handleClose()
         })
     }
@@ -212,16 +206,17 @@ export default function Blog() {
 
     async function loadAuctionInstances(contract) {
         setAuctionInstances([])
-        const auctionInstanceCount = await contract.methods.auctionInstanceCount().call()
-
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionInstanceCount = await contract.methods.auctionInstanceCount().call();
         
         for (var i = 0; i < auctionInstanceCount; i++) {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-            
         }
-        // console.log(auctionInstances);        
+        
+        const cosignedAuctionInstances = await getCosignedAuctionInstances(contract);
+        console.log(cosignedAuctionInstances);
+        const biddedAuctionInstances = await getBiddedAuctionInstances(contract);
+        console.log(biddedAuctionInstances);
     }
 
     function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
@@ -231,22 +226,12 @@ export default function Blog() {
 //     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
 //     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
     
-    async function getCosignedAuctionInstances(){
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
-        
-        const tmp = await contract.methods.getCosignedAuctionInstances().call();
-
-        console.log(tmp);
+    async function getCosignedAuctionInstances(contract){
+        return await contract.methods.getCosignedAuctionInstances().call({from: account});
     }
 
-    async function getBiddedAuctionInstances(){
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
-        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
-        
-        const tmp = await contract.methods.getBiddedAuctionInstances().call();
-        
-        console.log(tmp);
+    async function getBiddedAuctionInstances(contract){
+        return await contract.methods.getBiddedAuctionInstances().call({from: account});
     }
 
     const navigate = useNavigate();
@@ -285,7 +270,6 @@ export default function Blog() {
     const registerCloseCancel = () => {
         var dueDate = dueDayValue + "T23:59:59.000Z";
         var date = new Date(dueDate).getTime();
-        console.log(new Date(date));
         setRegisterOpen(false);
     }
 
@@ -299,15 +283,19 @@ export default function Blog() {
     }
 
     async function myInfoLoading() {
-        console.log("myInfoLoading");
-        await getCosignedAuctionInstances();
+        /*
+        const cosignedAuctionInstances = await getCosignedAuctionInstances();
         await getBiddedAuctionInstances();
-        console.log(sell_tokenId);
-        console.log(buy_tokenId);
+
+        console.log(cosignedAuctionInstances.length);
+        for (var i = 0; i < cosignedAuctionInstances.count; i++) {
+
+        }
+
+        //Buy
+        /*
         const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
         const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
-        
-        //Buy 
         const buy_count = buy_tokenId.length;
 
         for (var i = 0; i < buy_count; i++) {
@@ -322,14 +310,13 @@ export default function Blog() {
             const response = await fetch(ipfsAddress);
             const res_json = await response.json();
     
-            console.log(res_json);
-    
             const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
     
             const imageData = await fetch(imageIpfsAddress);
             const _img = await imageData.url;
             
         }
+        */
     }
     const AsyncPlayer = createInstance({ promiseFn: myInfoLoading }, "AsyncPlayer");
     
