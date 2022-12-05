@@ -44,6 +44,7 @@ import { useOverShadowStyles } from '@mui-treasury/styles/shadow/over';
 import { getFormControlLabelUtilityClasses } from '@mui/material';
 
 import { useAsync,Async,createInstance } from 'react-async';
+import './Detail.css';
 
 const useStyles = makeStyles(({ breakpoints, spacing }) => ({
   root: {
@@ -182,6 +183,11 @@ const loadAuctionInstances = async () => {
 
 const AsyncPlayer = createInstance({promiseFn:loadAuctionInstances},"AsyncPlayer");
 
+let now = + new Date();
+
+var timeStamp = setInterval(function(){
+  now = +new Date();
+},1000);
 
 export default function Detail({ route }) {
   // const tokenId = route.params.id;
@@ -204,8 +210,21 @@ export default function Detail({ route }) {
   var date = new Date(Number(endTime));
 
   const year = date.getFullYear();
-  const month = date.getMonth();
+  const month = date.getMonth() + 1;
   const day = date.getDate();
+
+  var time_diff = Number(endTime) - now;
+
+//   if(time_diff < 1000 * 60)
+// 	  a += Math.floor(time_diff / 1000) + ' 초전';
+//   else if(time_diff < 1000 * 60 * 60)
+// 	a += Math.floor(time_diff / (1000 * 60)) + ' 분전';
+// else if(time_diff < 1000 * 60 * 60 * 24)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60)) + ' 시간전';
+// else if(time_diff < 1000 * 60 * 60 * 24 * 30)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60 * 24)) + ' 일전';
+// else if(time_diff < 1000 * 60 * 60 * 24 * 30 * 12)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60 * 24 * 30)) + ' 달전';
 
 
   const [bidValue, setbidValue] = React.useState(0);
@@ -259,7 +278,7 @@ export default function Detail({ route }) {
 
   async function loadLogs(auctionId) {
     const auctionLog = await auctionContract.methods.getAuctionLogs(auctionId).call()
-    console.log(auctionLog);
+   // console.log(auctionLog);
     let tmpArray = []
     for (var i = 0; i < auctionLog.length; i++) {
 
@@ -409,13 +428,22 @@ export default function Detail({ route }) {
               <Grid item xs={12} sm={2}>
 
                 <IconButton onClick={detailMainClick}><NavigateNextIcon fontSize="large" /></IconButton>
+              
               </Grid>
               <Grid item xs={12} sm={8}>
-                <Row>
-                  <TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
+                
+                  {
+                    (now < Number(endTime))?
+                    <div> <Row><TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
                     onChange={bidChange} />
-                  <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton>
-                </Row>
+                  <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton> </Row> </div>:
+                  <Button variant="outlined" color="error" className="blink">
+                  경매가 종료된 상품입니다
+                  </Button>
+                  }
+                  
+                
+                
               </Grid>
 
 

@@ -55,39 +55,46 @@ import Birthday from '@mui-treasury/components/textField/birthday';
 import { useBootstrapInputStyles } from '@mui-treasury/styles/input/bootstrap';
 import { bootstrapLabelStyles } from '@mui-treasury/styles/textField/bootstrap';
 import { makeStyles } from '@material-ui/core/styles';
-import FormHelperText from '@material-ui/core/FormHelperText';
+import { createInstance } from 'react-async';
+
 
 const buy = [
-    {
-        name: 'Wassie 10352', cost: 0.6,
-        img: 'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
-    },
+    // {
+    //     name: 'Wassie 10352', cost: 0.6,
+    //     img: 'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
+    // },
 
-    {
-        name: 'Wassie 2651', cost: 0.6142,
-        img: 'https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'
-    },
+    // {
+    //     name: 'Wassie 2651', cost: 0.6142,
+    //     img: 'https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'
+    // },
+    // {
+    //     name: 'Pudgy Penguin #3139', cost: 2.5946,
+    //     img: 'https://img.seadn.io/files/82f60175d1c642299b0e4c8aa8ea7d14.png?auto=format&fit=max&w=512'
+    // },
 
 ];
 
 const sell = [
-    {
-        name: '#80', cost: 0.085,
-        img: 'https://i.seadn.io/gae/tk8c7kTX_euzFuLP_6rl_f_1ZPMMFNEEu5AqjdlzMOzl0zzbfIqyKZAkVetmToq299M1ger-k9D0F7Pyaoe9ndf_aEj6UHnhWnq-fg?auto=format&w=512'
-    },
+    // {
+    //     name: '#80', cost: 0.085,
+    //     img: 'https://i.seadn.io/gae/tk8c7kTX_euzFuLP_6rl_f_1ZPMMFNEEu5AqjdlzMOzl0zzbfIqyKZAkVetmToq299M1ger-k9D0F7Pyaoe9ndf_aEj6UHnhWnq-fg?auto=format&w=512'
+    // },
 
-    {
-        name: '7330', cost: 58.300,
-        img: 'https://img.seadn.io/files/f4e7af0cf0d55d6529e43efbb68427ea.png?auto=format&fit=max&w=512'
-    },
+    // {
+    //     name: '7330', cost: 58.300,
+    //     img: 'https://img.seadn.io/files/f4e7af0cf0d55d6529e43efbb68427ea.png?auto=format&fit=max&w=512'
+    // },
 
-    {
-        name: 'Pudgy Penguin #3139', cost: 2.5946,
-        img: 'https://img.seadn.io/files/82f60175d1c642299b0e4c8aa8ea7d14.png?auto=format&fit=max&w=512'
-    },
+    // {
+    //     name: 'Pudgy Penguin #3139', cost: 2.5946,
+    //     img: 'https://img.seadn.io/files/82f60175d1c642299b0e4c8aa8ea7d14.png?auto=format&fit=max&w=512'
+    // },
 
 ];
 
+const buy_tokenId = [];
+const sell_tokenId = [];
 const featuredPosts = [
     {
         title: '호가 내역',
@@ -122,6 +129,8 @@ const useStyles = makeStyles(() => ({
 }));
 const useLabelStyles = makeStyles(bootstrapLabelStyles);
 
+
+
 export default function Blog() {
 
     // const { sections, title } = props;
@@ -150,6 +159,7 @@ export default function Blog() {
         loadAccount()
             .then(() => {
                 loadContract()
+                
             })
     };
 
@@ -209,21 +219,7 @@ export default function Blog() {
         for (var i = 0; i < auctionInstanceCount; i++) {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-            // const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
-            // const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
-            // const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
-            // //console.log(ipfsAddress);
-
-            // fetch(ipfsAddress)
-            // .then(response => response.json())
-            // .then(data => {
-            //     //console.log(data);
-            //     const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
-            //     fetch(imageIpfsAddress)
-            //     .then(imageData => {
-            //         //console.log(imageData);
-            //     });
-            // }); 
+            
         }
         // console.log(auctionInstances);        
     }
@@ -231,6 +227,26 @@ export default function Blog() {
     function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
         contract.methods.createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime)
             .send({ from: account })
+    }
+//     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
+//     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
+    
+    async function getCosignedAuctionInstances(){
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
+        
+        const tmp = await contract.methods.getCosignedAuctionInstances().call();
+
+        console.log(tmp);
+    }
+
+    async function getBiddedAuctionInstances(){
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
+        
+        const tmp = await contract.methods.getBiddedAuctionInstances().call();
+        
+        console.log(tmp);
     }
 
     const navigate = useNavigate();
@@ -282,6 +298,40 @@ export default function Blog() {
 
     }
 
+    async function myInfoLoading() {
+        console.log("myInfoLoading");
+        await getCosignedAuctionInstances();
+        await getBiddedAuctionInstances();
+        console.log(sell_tokenId);
+        console.log(buy_tokenId);
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
+        
+        //Buy 
+        const buy_count = buy_tokenId.length;
+
+        for (var i = 0; i < buy_count; i++) {
+            const auctionInstance = await auctionContract.methods.getAuctionInstance(buy_tokenId[i]).call();
+            const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+
+            await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+            const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
+    
+            const ipfsAddress = await result.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const response = await fetch(ipfsAddress);
+            const res_json = await response.json();
+    
+            console.log(res_json);
+    
+            const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const imageData = await fetch(imageIpfsAddress);
+            const _img = await imageData.url;
+            
+        }
+    }
+    const AsyncPlayer = createInstance({ promiseFn: myInfoLoading }, "AsyncPlayer");
     
     //css
 
@@ -556,16 +606,20 @@ export default function Blog() {
                 <Toolbar></Toolbar>
                 <main>
                     {account != null ? <div>
-                        <Grid container spacing={4} sx={{ height: 300 }}>
+                        <Grid container spacing={4} sx={{ height: 400 }}>
+                        <AsyncPlayer>
+                            <AsyncPlayer.Fulfilled>
                             {featuredPosts.map((post) => (
                                 <FeaturedPost key={post.title} post={post} />
                             ))}
+                            </AsyncPlayer.Fulfilled>
+                        </AsyncPlayer>
                         </Grid>
-                        <Grid sx={{ mb: 10 }}></Grid>
+                        <Grid sx={{ mb: 5 }}></Grid>
                     </div> : null}
 
-                    <Grid container spacing={5} >
-                        <Main title="전체 상품 보기" />
+                    <Grid container spacing={10} >
+                        <Main title="전체 상품 보기"/>
 
                     </Grid>
 
