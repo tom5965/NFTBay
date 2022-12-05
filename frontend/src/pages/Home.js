@@ -149,13 +149,14 @@ export default function Blog() {
     };
 
     const [account, setAccount] = React.useState();
+    const accountRef = React.useRef();
+    accountRef.current = account;
     const [contract, setContract] = React.useState();
     const [auctionInstances, setAuctionInstances] = React.useState([]);
     const [newAuctionName, setNewAuctionName] = React.useState('');
     const [startingPrice, setStartingPrice] = React.useState(0);
 
     React.useEffect(() => {
-        console.log(account);
         if (typeof account !== 'undefined') {
             loadContract(contract);
         }
@@ -163,7 +164,7 @@ export default function Blog() {
 
     //login창
     const startLogin = async (e) => {
-        loadAccount()
+        loadAccount();
     };
     
     async function loadAccount() {
