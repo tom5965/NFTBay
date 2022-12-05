@@ -11,6 +11,8 @@ import Link from '@material-ui/core/Link';
 import { makeStyles } from '@material-ui/core/styles';
 import { Column, Row, Item } from '@mui-treasury/components/flex';
 import { useDynamicAvatarStyles } from '@mui-treasury/styles/avatar/dynamic';
+import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
+import Container from '@mui/material/Container';
 
 const usePersonStyles = makeStyles(() => ({
   text: {
@@ -37,11 +39,30 @@ const usePersonStyles = makeStyles(() => ({
   },
 }));
 
+const theme = createMuiTheme({
+  overrides: {
+    MuiCssBaseline: {
+      "@global": {
+        "*::-webkit-scrollbar": {
+          width: "5px"
+        },
+        "*::-webkit-scrollbar-track": {
+          background: "#E4EFEF"
+        },
+        "*::-webkit-scrollbar-thumb": {
+          background: "#1D388F61",
+          borderRadius: "2px"
+        }
+      }
+    }
+  }
+});
 const PersonItem = ({ name, bid, img }) => {
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
 
   return (
+    
     <Row gap={2} p={2.5}>
       <Item>
         <Avatar classes={avatarStyles} src={img} />
@@ -62,6 +83,7 @@ const PersonItem = ({ name, bid, img }) => {
         
       </Row>
     </Row>
+    
     
   );
 };
@@ -103,10 +125,12 @@ function FeaturedPost(props) {
   // alert(Object.entries(post.list[0]));
   return (
     <>
+    
     <Grid item xs={12} md={6}>
       <NoSsr>
         <GoogleFontLoader fonts={[{ font: 'Barlow', weights: [400, 600] }]} />
       </NoSsr>
+      <Container fixed={true}>
       <Column p={0} gap={0} className={styles.card}>
         <Row wrap p={2} alignItems={'baseline'} className={styles.header}>
           <Item stretched className={styles.headline}>{post.title}</Item>
@@ -114,13 +138,10 @@ function FeaturedPost(props) {
             <Link className={styles.link}> <Button>See all</Button></Link>
           </Item>
         </Row>
+       
         {(post.list).map(({name,cost,img}) => (<PersonItem key={name} name={name} bid = {cost} img={img} />))}
-        {/* <PersonItem name={'Amber Matthews'} bid={6} src={'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?auto=format&fit=max&w=512'} />
-        
-        <PersonItem name={'Russel Robertson'} bid={2} src={'https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'} />
-        
-        <PersonItem name={'Kathleen Ellis'} bid={2} src={'https://img.seadn.io/files/b8f5cdf1e9cd3fcf8547d9f09cc044c3.jpg?auto=format&fit=max&w=512'} /> */}
       </Column>
+      </Container>
       </Grid>
     </>
     

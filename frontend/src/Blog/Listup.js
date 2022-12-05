@@ -67,7 +67,7 @@ const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
 
 
 const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime, id, account }) => {
-    console.log("Listiem");
+    
     const commonProps = {
         blur: '12px',
         radius: 16,
