@@ -8,6 +8,7 @@ import {
 import App from "./App";
 import Home from "./pages/Home";
 import Detail from "./pages/Detail";
+import MyList from './pages/MyList';
 
 
 const rootElement = document.getElementById("root");
@@ -16,6 +17,7 @@ render(
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path = '/Detail' element={<Detail />} />
+      <Route path = '/MyList' element = {<MyList />} />
     </Routes>
   </BrowserRouter>,
   rootElement
