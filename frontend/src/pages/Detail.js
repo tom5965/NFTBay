@@ -139,18 +139,6 @@ const columns = [
   },
 ];
 
-// const rows = [
-//   ,
-//   { id: 2, bid: '8', bidTime: '2022.10.7 10:55', Bidder: 42 },
-//   { id: 3, bid: '12', bidTime: '2022.10.7 10:55', Bidder: 45 },
-//   { id: 4, bid: '45', bidTime: '2022.10.7 10:55', Bidder: 16 },
-//   { id: 5, bid: '65', bidTime: '2022.10.7 10:55', Bidder: null },
-//   { id: 6, bid: '23', bidTime: '2022.10.7 10:55', Bidder: 150 },
-//   { id: 7, bid: '0.23', bidTime: '2022.10.7 10:55', Bidder: 44 },
-//   { id: 8, bid: '1', bidTime: '2022.10.7 10:55', Bidder: 36 },
-//   { id: 9, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 65 },
-// ];
-
 let tokenId = '';
 let tokenAddress = '';
 let tokenName = '';
@@ -284,7 +272,7 @@ export default function Detail({ route }) {
 
       let date = new Date(auctionLog[i].bidTime * 1000);
       let year = date.getFullYear();
-      let month = date.getMonth();
+      let month = date.getMonth() + 1;
       let day = date.getDate();
       let hour = date.getHours();
       let min = date.getMinutes();

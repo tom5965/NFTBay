@@ -13,7 +13,9 @@ import { useAsync, Async, createInstance } from 'react-async';
 import Button from '@material-ui/core/Button';
 import Detail from '../pages/Detail';
 import { IpfsImage } from 'react-ipfs-image';
+import MyList from '../pages/MyList';
 
+import Container from '@mui/material/Container';
 import { Column, Row, Item } from '@mui-treasury/components/flex';
 import {
     Info,
@@ -51,6 +53,7 @@ const useStyles = makeStyles(() => ({
         marginTop: 7,
         fontSize: '1.3rem',
         fontWeight: '500',
+        color : '#000000',
     },
 }));
 

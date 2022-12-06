@@ -13,6 +13,10 @@ import { Column, Row, Item } from '@mui-treasury/components/flex';
 import { useDynamicAvatarStyles } from '@mui-treasury/styles/avatar/dynamic';
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import Container from '@mui/material/Container';
+import { useNavigate, useNavigation, useParams, NavLink, createSearchParams } from 'react-router-dom';
+import Tooltip from '@mui/material/Tooltip';
+
+let type;
 
 const usePersonStyles = makeStyles(() => ({
   text: {
@@ -37,6 +41,13 @@ const usePersonStyles = makeStyles(() => ({
     borderColor: '#becddc',
     fontSize: '0.75rem',
   },
+  withdraw_btn: {
+    borderRadius: 20,
+    padding: '0.125rem 0.75rem',
+    borderColor: '#fa0f0f',
+    fontSize: '0.75rem',
+    color: '#fa0f0f',
+  },
 }));
 
 const theme = createMuiTheme({
@@ -57,10 +68,24 @@ const theme = createMuiTheme({
     }
   }
 });
-const PersonItem = ({ name, bid, img }) => {
+let now = +new Date();
+var timeStamp = setInterval(function(){
+  now = +new Date();
+},1000);
+
+const PersonItem = ({ type,name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
+  let isFinish = false;
+  now = + new Date();
 
+  if(Number(endTime) <= Number(now)) isFinish = true;
+
+  const navigate = useNavigate();
+
+  let ifFinish = "";
+  console.log(type);
+  
   return (
     
     <Row gap={2} p={2.5}>
@@ -75,9 +100,28 @@ const PersonItem = ({ name, bid, img }) => {
           </div>
         </Item>
         <Item position={'middle'}>
-          <Button className={styles.btn} variant={'outlined'}>
+          {isFinish == false ?<Button className={styles.btn} variant={'outlined'} 
+          onClick={() => {
+                    //name, bid, img,tokenId, tokenAddress, endTime,id,account
+                    navigate({
+                        pathname: '/Detail',
+                        search: createSearchParams({
+                            tokenId: tokenId,
+                            tokenAddress: tokenAddress,
+                            highestBid: bid,
+                            auctionEndTime: endTime,
+                            auctionId: id,
+                            account: account,
+                            name: name,
+                        }).toString()
+                    });
+                }}>
             DETAIL
-          </Button>
+          </Button> : <Tooltip title="호가한 상품 : 낙찰 & 등록한 상품 : 낙찰가 회수">
+            <Button className={styles.withdraw_btn} variant={'outlined'} > 경매 종료
+            </Button>
+            </Tooltip>}
+            
           <Divider variant={'middle'} className={styles.divider} />
         </Item>
         
@@ -94,6 +138,9 @@ const useStyles = makeStyles(() => ({
     borderRadius: 16,
     boxShadow: '0 8px 16px 0 #BDC9D7',
     overflow: 'hidden',
+    flexDirection : 'column',
+    overflowY :'scroll',
+    '&::-webkit-scrollbar': {display: 'none'}
   },
   header: {
     fontFamily: 'Barlow, san-serif',
@@ -121,8 +168,20 @@ const useStyles = makeStyles(() => ({
 function FeaturedPost(props) {
   const styles = useStyles();
   const {post} = props;
+  let show_list = [];
+  // if(post.list.length > 3) show_list = (post.list).slice(0,3);
+  // else show_list = post.list;
+  show_list = post.list;
+ 
+  if(post.title == '호가 내역') type = 0;
+  else type = 1;
 
-  // alert(Object.entries(post.list[0]));
+  console.log(type);
+  // console.log(post.list);
+  const {account} = props;
+
+  const navigate = useNavigate();
+  
   return (
     <>
     
@@ -130,16 +189,18 @@ function FeaturedPost(props) {
       <NoSsr>
         <GoogleFontLoader fonts={[{ font: 'Barlow', weights: [400, 600] }]} />
       </NoSsr>
-      <Container fixed={true}>
-      <Column p={0} gap={0} className={styles.card}>
+      <Container fixed={true} >
+      <Column p={0} gap={0} className={styles.card} sx={{display:'flex', flexDirection:'column',
+      overflow:'hidden',
+     overflowY:'scroll', height:350}}>
         <Row wrap p={2} alignItems={'baseline'} className={styles.header}>
           <Item stretched className={styles.headline}>{post.title}</Item>
           <Item className={styles.actions}>
-            <Link className={styles.link}> <Button>See all</Button></Link>
+            
           </Item>
         </Row>
        
-        {(post.list).map(({name,cost,img}) => (<PersonItem key={name} name={name} bid = {cost} img={img} />))}
+        {(show_list).map(({name,cost,img,tokenId,tokenAddress,endTime,id,account}) => (<PersonItem key={name} name={name} bid = {cost} img={img} tokenId={tokenId} tokenAddress = {tokenAddress} endTime = {endTime} id = {id} account = {account} />))}
       </Column>
       </Container>
       </Grid>
@@ -151,11 +212,11 @@ function FeaturedPost(props) {
 //   <FeaturedPost key={post.title} post={post} />
 // ))}
 
-FeaturedPost.propTypes = {
-  post: PropTypes.shape({
-    title: PropTypes.string.isRequired,
-    list : PropTypes.array.isRequired,
-  }).isRequired,
-};
+// FeaturedPost.propTypes = {
+//   post: PropTypes.shape({
+//     title: PropTypes.string.isRequired,
+//     // list : PropTypes.array.isRequired,
+//   }).isRequired,
+// };
 
 export default FeaturedPost;
