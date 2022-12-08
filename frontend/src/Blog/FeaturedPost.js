@@ -29,6 +29,7 @@ let type;
 const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
 const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
 
+
 const usePersonStyles = makeStyles(() => ({
   text: {
     fontFamily: 'Barlow, san-serif',
@@ -85,6 +86,11 @@ var timeStamp = setInterval(function(){
 },1000);
 
 const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
+
+  async function getBiddedAuctionInstances(contract){
+    return await contract.methods.getBiddedAuctionInstances().call({from: account});
+  }
+  
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
   let isFinish = false;
@@ -102,10 +108,20 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
     //type : 0 호가 내역이므로 token을 내는 함수가 작동하고
     //type : 1 등록 내역이므로 낙찰가를 회수하는 함수가 작동
     if(itemType == 0){
-
+      //alert("receive");
+      // console.log("token id :"+tokenId);
+      // console.log("bid :"+bid);
+      // console.log("name :"+name);
+      // console.log("tokenAddress :"+tokenAddress);
+      // console.log("endTime :"+endTime);
+      // console.log("account :"+account);
+      // console.log("id :"+id);
+      await auctionContract.methods.receiveToken(id).call();
     }
     else{
+      //alert("widthdraw");
       await auctionContract.methods.widthdrawFromAuctionInstance(id).call();
+      
     }
   };
   
