@@ -15,8 +15,19 @@ import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import Container from '@mui/material/Container';
 import { useNavigate, useNavigation, useParams, NavLink, createSearchParams } from 'react-router-dom';
 import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+
+import Web3 from 'web3'
+import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
 
 let type;
+
+const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
 
 const usePersonStyles = makeStyles(() => ({
   text: {
@@ -73,19 +84,45 @@ var timeStamp = setInterval(function(){
   now = +new Date();
 },1000);
 
-const PersonItem = ({ type,name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
+const PersonItem = ({ name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
   let isFinish = false;
   now = + new Date();
 
+  const [endOpen,setEnd] = React.useState(false);
+
   if(Number(endTime) <= Number(now)) isFinish = true;
 
   const navigate = useNavigate();
 
-  let ifFinish = "";
-  console.log(type);
   
+  const afterEnd = async (e) =>{
+    console.log("afterEnd in");
+    //type : 0 호가 내역이므로 token을 내는 함수가 작동하고
+    //type : 1 등록 내역이므로 낙찰가를 회수하는 함수가 작동
+    if(type == 0){
+
+    }
+    else{
+      await auctionContract.methods.widthdrawFromAuctionInstance(id).call();
+    }
+  };
+  
+  const earlyOpen = (e)=>{
+    setEnd(true);
+    //await auctionContract.methods.endAuction(id).call();
+  };
+
+  const endClose = (e)=>{
+    setEnd(false);
+  }
+
+  const endOK = async(e)=>{
+    setEnd(false);
+    await auctionContract.methods.endAuction(id).call();
+  }
+
   return (
     
     <Row gap={2} p={2.5}>
@@ -100,7 +137,7 @@ const PersonItem = ({ type,name, bid, img,tokenId, tokenAddress, endTime,id,acco
           </div>
         </Item>
         <Item position={'middle'}>
-          {isFinish == false ?<Button className={styles.btn} variant={'outlined'} 
+          {isFinish == false ?<div><Button className={styles.btn} variant={'outlined'} 
           onClick={() => {
                     //name, bid, img,tokenId, tokenAddress, endTime,id,account
                     navigate({
@@ -115,10 +152,32 @@ const PersonItem = ({ type,name, bid, img,tokenId, tokenAddress, endTime,id,acco
                             name: name,
                         }).toString()
                     });
-                }}>
+                }}
+                onContextMenu={earlyOpen}>
             DETAIL
-          </Button> : <Tooltip title="호가한 상품 : 낙찰 & 등록한 상품 : 낙찰가 회수">
-            <Button className={styles.withdraw_btn} variant={'outlined'} > 경매 종료
+          </Button>
+          <Dialog
+        open={endOpen}
+        onClose={endClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"경매를 일찍 종료하시겠습니까?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            누르시면 경매가 바로 종료됩니다. 종료하시겠습니까?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={endClose}>Disagree</Button>
+          <Button onClick={endOK} autoFocus>
+            Agree
+          </Button>
+        </DialogActions>
+      </Dialog></div> : <Tooltip title="호가한 상품 : 낙찰 & 등록한 상품 : 낙찰가 회수">
+            <Button className={styles.withdraw_btn} variant={'outlined'} onClick={afterEnd}> 경매 종료
             </Button>
             </Tooltip>}
             

@@ -194,7 +194,6 @@ export default function Detail({ route }) {
   const auctionId = searchparams.get("auctionId");
   const account = searchparams.get("account");
   const name = searchparams.get("name");
-
   var date = new Date(Number(endTime));
 
   const year = date.getFullYear();
