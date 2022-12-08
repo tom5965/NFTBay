@@ -84,7 +84,7 @@ var timeStamp = setInterval(function(){
   now = +new Date();
 },1000);
 
-const PersonItem = ({ name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
+const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,account  }) => {
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
   let isFinish = false;
@@ -96,12 +96,12 @@ const PersonItem = ({ name, bid, img,tokenId, tokenAddress, endTime,id,account  
 
   const navigate = useNavigate();
 
-  
+  console.log(itemType);
   const afterEnd = async (e) =>{
     console.log("afterEnd in");
     //type : 0 호가 내역이므로 token을 내는 함수가 작동하고
     //type : 1 등록 내역이므로 낙찰가를 회수하는 함수가 작동
-    if(type == 0){
+    if(itemType == 0){
 
     }
     else{
@@ -231,11 +231,16 @@ function FeaturedPost(props) {
   // if(post.list.length > 3) show_list = (post.list).slice(0,3);
   // else show_list = post.list;
   show_list = post.list;
- 
+  
   if(post.title == '호가 내역') type = 0;
   else type = 1;
 
-  console.log(type);
+  for(var i = 0; i<show_list.length;i++){
+    show_list[i]['type'] = type;
+  }
+  
+
+  console.log(show_list);
   // console.log(post.list);
   const {account} = props;
 
@@ -259,7 +264,7 @@ function FeaturedPost(props) {
           </Item>
         </Row>
        
-        {(show_list).map(({name,cost,img,tokenId,tokenAddress,endTime,id,account}) => (<PersonItem key={name} name={name} bid = {cost} img={img} tokenId={tokenId} tokenAddress = {tokenAddress} endTime = {endTime} id = {id} account = {account} />))}
+        {(show_list).map(({type,name,cost,img,tokenId,tokenAddress,endTime,id,account}) => (<PersonItem key={name} itemType={type}name={name} bid = {cost} img={img} tokenId={tokenId} tokenAddress = {tokenAddress} endTime = {endTime} id = {id} account = {account} />))}
       </Column>
       </Container>
       </Grid>
