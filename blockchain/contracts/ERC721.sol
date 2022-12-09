@@ -8,6 +8,7 @@ interface IERC721 {
   function ownerOf(uint256 _tokenId) external view returns (address);
   function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
   function approve(address _approved, uint256 _tokenId) external payable;
+  function getApproved(uint256 _tokenId) external view returns (address);
 }
 
 contract ERC721 {
@@ -28,5 +29,9 @@ contract ERC721 {
 
     function transferFrom(address _from, address _to, uint256 _tokenId) external payable {
         IERC721(contractAddress).transferFrom(_from, _to, _tokenId);
+    }
+    
+    function getApproved(uint256 _tokenId) external view returns (address) {
+        return IERC721(contractAddress).getApproved(_tokenId);
     }
 }
