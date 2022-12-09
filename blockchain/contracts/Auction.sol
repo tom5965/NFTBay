@@ -38,10 +38,12 @@ contract Auction {
     mapping(address => uint[]) public biddedAuctionInstancesMap;
 
     function createAuctionInstance(address tokenAddress, uint tokenId, uint startingPrice, uint auctionEndTime) external {
-        //Check if token belongs to owner
+        // Check if token belongs to owner
         ERC721 tokenContract = ERC721(tokenAddress);
         require(msg.sender == tokenContract.ownerOf(tokenId), "Token is not owned by account!");
         require(block.timestamp < auctionEndTime, "Auction end time cannot be before than current time");
+        // Check if this contract is approved
+        require(tokenContract.getApproved(tokenId) == address(this), "Token is not approved to this contract");
         auctionInstances[auctionInstanceCount] = AuctionInstance(auctionInstanceCount, msg.sender, tokenAddress, tokenId, startingPrice, msg.sender, auctionEndTime, 0, false);
         emit AuctionInstanceCreated(auctionInstanceCount);
         ownerAuctionInstanceCountMap[msg.sender]++;
@@ -98,6 +100,7 @@ contract Auction {
         uint received20Token = auctionInstance.received20Token;
         auctionInstance.received20Token = 0;
         auctionInstance.widthdrawFinished = true;
+        auctionInstances[_auctionInstanceId] = auctionInstance;
 
         (bool success, ) = payable(msg.sender).call{value: received20Token}("");
         require(success, "Widthdraw failed");
@@ -108,10 +111,11 @@ contract Auction {
         AuctionInstance memory auctionInstance = auctionInstances[_auctionInstanceId];
         require(block.timestamp > auctionInstance.auctionEndTime, "Auction not ended!");
         require(msg.sender == auctionInstance.highestBidder, "Account is not higest bidder");
-        //Check if balance is enough
+        // Check if balance is enough
         require(msg.value >= auctionInstance.highestBid, "Payment price is not correct");
-        //Tranasfer bid, and get token
+        // Tranasfer bid, and get token
         auctionInstance.received20Token += msg.value;
+        auctionInstances[_auctionInstanceId] = auctionInstance;
         ERC721 tokenContract = ERC721(auctionInstance.tokenAddress);
         tokenContract.transferFrom(auctionInstance.cosigner, msg.sender, auctionInstance.tokenId);
     }
