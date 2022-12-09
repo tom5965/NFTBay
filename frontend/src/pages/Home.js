@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
 
 import CssBaseline from '@mui/material/CssBaseline';
 import Grid from '@mui/material/Grid';
@@ -182,16 +182,15 @@ export default function Blog() {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
         }
-        
-        // cosignedAuctionInstances = await getCosignedAuctionInstances(contract);
-        // console.log(cosignedAuctionInstances);
-        // const biddedAuctionInstances = await getBiddedAuctionInstances(contract);
-        // console.log(biddedAuctionInstances);
     }
 
-    function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
-        contract.methods.createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime)
-            .send({ from: account })
+    async function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const tokenContract = new web3.eth.Contract(ERC721_ABI, tokenAddress);
+        await tokenContract.methods.approve(AUCTION_ADDRESS, tokenId).send({ from: account })
+        .then(() => {
+            contract.methods.createAuctionInstance(tokenAddress, tokenId, web3.utils.toWei(String(startingPrice)), auctionEndTime).send({ from: account })
+        })
     }
 //     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
 //     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
@@ -239,25 +238,21 @@ export default function Blog() {
         setRegisterOpen(true);
     };
     const registerCloseCancel = () => {
-        var dueDate = dueDayValue + "T23:59:59.000Z";
-        var date = new Date(dueDate).getTime();
         setRegisterOpen(false);
     }
 
     const registerClose_R = () => {
         setRegisterOpen(false);
         var dueDate = dueDayValue + "T23:59:59.000Z";
-        var date = new Date(dueDate).getTime();
+        var unixTime = Math.floor((new Date(dueDate).getTime()) / 1000);
         
-        createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), date);
-
+        createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), unixTime);
     }
     async function myInfoLoading() {
         
 
         sell_tokenId = await getCosignedAuctionInstances(contract);
-        console.log(sell_tokenId)
-;        var sell_Count = sell_tokenId.length;
+        var sell_Count = sell_tokenId.length;
 
         //Sell
         const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
@@ -265,7 +260,7 @@ export default function Blog() {
         
         for (var i = 0; i < sell_Count; i++) {
             let tmp = {};
-            const nftContract = await new web3.eth.Contract(TOKENURIABI, sell_tokenId[i].tokenAddress);
+            const nftContract = await new web3.eth.Contract(ERC721_ABI, sell_tokenId[i].tokenAddress);
             tmp['tokenId'] = sell_tokenId[i].tokenId;
             tmp['tokenAddress'] = sell_tokenId[i].tokenAddress;
             tmp['cost'] = sell_tokenId[i].highestBid;
@@ -297,10 +292,9 @@ export default function Blog() {
         buy_tokenId = await getBiddedAuctionInstances(contract);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         var buy_Count = buy_tokenId.length;
-        console.log(buy_tokenId);
         for (var i = 0; i < buy_Count; i++) {
             let tmp = {};
-            const nftContract = await new web3.eth.Contract(TOKENURIABI, buy_tokenId[i].tokenAddress);
+            const nftContract = await new web3.eth.Contract(ERC721_ABI, buy_tokenId[i].tokenAddress);
             tmp['tokenId'] = buy_tokenId[i].tokenId;
             tmp['tokenAddress'] = buy_tokenId[i].tokenAddress;
             tmp['cost'] = buy_tokenId[i].highestBid;
@@ -324,7 +318,6 @@ export default function Blog() {
             const _img = await imageData.url;
 
             tmp['img'] = _img;
-            console.log()
             if(buy.findIndex(e => e.id === tmp['id']) === -1) buy.push(tmp);
 
         }

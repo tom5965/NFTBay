@@ -22,7 +22,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS } from '../config'
 
 let type;
 
@@ -94,33 +94,21 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
   let isFinish = false;
-  now = + new Date();
 
   const [endOpen,setEnd] = React.useState(false);
 
-  if(Number(endTime) <= Number(now)) isFinish = true;
+  if(new Date(endTime * 1000) <= Date.now()) isFinish = true;
 
   const navigate = useNavigate();
 
-  console.log(itemType);
   const afterEnd = async (e) =>{
-    console.log("afterEnd in");
     //type : 0 호가 내역이므로 token을 내는 함수가 작동하고
     //type : 1 등록 내역이므로 낙찰가를 회수하는 함수가 작동
     if(itemType == 0){
-      //alert("receive");
-      // console.log("token id :"+tokenId);
-      // console.log("bid :"+bid);
-      // console.log("name :"+name);
-      // console.log("tokenAddress :"+tokenAddress);
-      // console.log("endTime :"+endTime);
-      // console.log("account :"+account);
-      // console.log("id :"+id);
-      await auctionContract.methods.receiveToken(id).call();
+      await auctionContract.methods.receiveToken(id).send({from: account, value: Number(bid)});
     }
     else{
-      //alert("widthdraw");
-      await auctionContract.methods.widthdrawFromAuctionInstance(id).call();
+      await auctionContract.methods.widthdrawFromAuctionInstance(id).send({from: account});
       
     }
   };
@@ -136,7 +124,7 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
 
   const endOK = async(e)=>{
     setEnd(false);
-    await auctionContract.methods.endAuction(id).call();
+    await auctionContract.methods.endAuction(id).send({from: account});
   }
 
   return (
@@ -256,8 +244,6 @@ function FeaturedPost(props) {
   }
   
 
-  console.log(show_list);
-  // console.log(post.list);
   const {account} = props;
 
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
 
 import NoSsr from '@material-ui/core/NoSsr';
 import GoogleFontLoader from 'react-google-font-loader';
@@ -147,7 +147,7 @@ async function loading() {
 
     for (var i = 0; i < auctionInstanceCount; i++) {
         const auctionInstance = await auctionContract.methods.getAuctionInstance(i).call();
-        const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+        const nftContract = new web3.eth.Contract(ERC721_ABI, auctionInstance.tokenAddress);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
 

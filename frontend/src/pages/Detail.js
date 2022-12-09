@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
 
 import cx from 'clsx';
 import PropTypes from 'prop-types';
@@ -151,7 +151,7 @@ const loadAuctionInstances = async () => {
   //await new Promise((resolve, reject) => setTimeout(resolve, 1000));
 
   // setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-  const nftContract = new web3.eth.Contract(TOKENURIABI, tokenAddress);
+  const nftContract = new web3.eth.Contract(ERC721_ABI, tokenAddress);
   await new Promise((resolve, reject) => setTimeout(resolve, 1000));
   const result = await nftContract.methods.tokenURI(tokenId).call();
 
@@ -171,12 +171,6 @@ const loadAuctionInstances = async () => {
 
 const AsyncPlayer = createInstance({promiseFn:loadAuctionInstances},"AsyncPlayer");
 
-let now = + new Date();
-
-var timeStamp = setInterval(function(){
-  now = +new Date();
-},1000);
-
 export default function Detail({ route }) {
   // const tokenId = route.params.id;
   // alert("in");
@@ -194,13 +188,11 @@ export default function Detail({ route }) {
   const auctionId = searchparams.get("auctionId");
   const account = searchparams.get("account");
   const name = searchparams.get("name");
-  var date = new Date(Number(endTime));
+  var date = new Date(endTime * 1000);
 
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
-
-  var time_diff = Number(endTime) - now;
 
 //   if(time_diff < 1000 * 60)
 // 	  a += Math.floor(time_diff / 1000) + ' 초전';
@@ -216,7 +208,7 @@ export default function Detail({ route }) {
 
   const [bidValue, setbidValue] = React.useState(0);
   const bidChange = (event) => {
-    setbidValue(event.target.value);
+    setbidValue(Number(event.target.value));
   };
 
 
@@ -292,12 +284,11 @@ export default function Detail({ route }) {
   }
 
   function bid() {
-    auctionContract.methods.bid(auctionId, bidValue)
-      .send({ from: account })
+    const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+    auctionContract.methods.bid(auctionId, web3.utils.toWei(String(bidValue))).send({ from: account })
   }
 
   loadLogs(auctionId);
-  //console.log()
 
   return (
     <>
@@ -420,7 +411,7 @@ export default function Detail({ route }) {
               <Grid item xs={12} sm={8}>
                 
                   {
-                    (now < Number(endTime))?
+                    (Date.now() < new Date(endTime * 1000))?
                     <div> <Row><TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
                     onChange={bidChange} />
                   <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton> </Row> </div>:
