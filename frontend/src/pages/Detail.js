@@ -44,6 +44,7 @@ import { useOverShadowStyles } from '@mui-treasury/styles/shadow/over';
 import { getFormControlLabelUtilityClasses } from '@mui/material';
 
 import { useAsync,Async,createInstance } from 'react-async';
+import './Detail.css';
 
 const useStyles = makeStyles(({ breakpoints, spacing }) => ({
   root: {
@@ -138,18 +139,6 @@ const columns = [
   },
 ];
 
-// const rows = [
-//   ,
-//   { id: 2, bid: '8', bidTime: '2022.10.7 10:55', Bidder: 42 },
-//   { id: 3, bid: '12', bidTime: '2022.10.7 10:55', Bidder: 45 },
-//   { id: 4, bid: '45', bidTime: '2022.10.7 10:55', Bidder: 16 },
-//   { id: 5, bid: '65', bidTime: '2022.10.7 10:55', Bidder: null },
-//   { id: 6, bid: '23', bidTime: '2022.10.7 10:55', Bidder: 150 },
-//   { id: 7, bid: '0.23', bidTime: '2022.10.7 10:55', Bidder: 44 },
-//   { id: 8, bid: '1', bidTime: '2022.10.7 10:55', Bidder: 36 },
-//   { id: 9, bid: '5', bidTime: '2022.10.7 10:55', Bidder: 65 },
-// ];
-
 let tokenId = '';
 let tokenAddress = '';
 let tokenName = '';
@@ -182,6 +171,11 @@ const loadAuctionInstances = async () => {
 
 const AsyncPlayer = createInstance({promiseFn:loadAuctionInstances},"AsyncPlayer");
 
+let now = + new Date();
+
+var timeStamp = setInterval(function(){
+  now = +new Date();
+},1000);
 
 export default function Detail({ route }) {
   // const tokenId = route.params.id;
@@ -200,12 +194,24 @@ export default function Detail({ route }) {
   const auctionId = searchparams.get("auctionId");
   const account = searchparams.get("account");
   const name = searchparams.get("name");
-
   var date = new Date(Number(endTime));
 
   const year = date.getFullYear();
-  const month = date.getMonth();
+  const month = date.getMonth() + 1;
   const day = date.getDate();
+
+  var time_diff = Number(endTime) - now;
+
+//   if(time_diff < 1000 * 60)
+// 	  a += Math.floor(time_diff / 1000) + ' 초전';
+//   else if(time_diff < 1000 * 60 * 60)
+// 	a += Math.floor(time_diff / (1000 * 60)) + ' 분전';
+// else if(time_diff < 1000 * 60 * 60 * 24)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60)) + ' 시간전';
+// else if(time_diff < 1000 * 60 * 60 * 24 * 30)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60 * 24)) + ' 일전';
+// else if(time_diff < 1000 * 60 * 60 * 24 * 30 * 12)
+// 	a += Math.floor(time_diff / (1000 * 60 * 60 * 24 * 30)) + ' 달전';
 
 
   const [bidValue, setbidValue] = React.useState(0);
@@ -259,13 +265,13 @@ export default function Detail({ route }) {
 
   async function loadLogs(auctionId) {
     const auctionLog = await auctionContract.methods.getAuctionLogs(auctionId).call()
-    console.log(auctionLog);
+   // console.log(auctionLog);
     let tmpArray = []
     for (var i = 0; i < auctionLog.length; i++) {
 
       let date = new Date(auctionLog[i].bidTime * 1000);
       let year = date.getFullYear();
-      let month = date.getMonth();
+      let month = date.getMonth() + 1;
       let day = date.getDate();
       let hour = date.getHours();
       let min = date.getMinutes();
@@ -409,13 +415,22 @@ export default function Detail({ route }) {
               <Grid item xs={12} sm={2}>
 
                 <IconButton onClick={detailMainClick}><NavigateNextIcon fontSize="large" /></IconButton>
+              
               </Grid>
               <Grid item xs={12} sm={8}>
-                <Row>
-                  <TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
+                
+                  {
+                    (now < Number(endTime))?
+                    <div> <Row><TextField id="standard-basic" label="응찰가 입력 (ETH)" className={styles.textField}
                     onChange={bidChange} />
-                  <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton>
-                </Row>
+                  <IconButton onClick={bid}><SendIcon fontSize="medium" /></IconButton> </Row> </div>:
+                  <Button variant="outlined" color="error" className="blink">
+                  경매가 종료된 상품입니다
+                  </Button>
+                  }
+                  
+                
+                
               </Grid>
 
 

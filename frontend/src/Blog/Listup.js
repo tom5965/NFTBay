@@ -13,7 +13,9 @@ import { useAsync, Async, createInstance } from 'react-async';
 import Button from '@material-ui/core/Button';
 import Detail from '../pages/Detail';
 import { IpfsImage } from 'react-ipfs-image';
+import MyList from '../pages/MyList';
 
+import Container from '@mui/material/Container';
 import { Column, Row, Item } from '@mui-treasury/components/flex';
 import {
     Info,
@@ -51,6 +53,7 @@ const useStyles = makeStyles(() => ({
         marginTop: 7,
         fontSize: '1.3rem',
         fontWeight: '500',
+        color : '#000000',
     },
 }));
 
@@ -67,7 +70,7 @@ const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
 
 
 const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime, id, account }) => {
-    console.log("Listiem");
+    
     const commonProps = {
         blur: '12px',
         radius: 16,
@@ -145,7 +148,6 @@ async function loading() {
     for (var i = 0; i < auctionInstanceCount; i++) {
         const auctionInstance = await auctionContract.methods.getAuctionInstance(i).call();
         const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
-        console.log(auctionInstance.tokenAddress);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
 

@@ -55,39 +55,15 @@ import Birthday from '@mui-treasury/components/textField/birthday';
 import { useBootstrapInputStyles } from '@mui-treasury/styles/input/bootstrap';
 import { bootstrapLabelStyles } from '@mui-treasury/styles/textField/bootstrap';
 import { makeStyles } from '@material-ui/core/styles';
-import FormHelperText from '@material-ui/core/FormHelperText';
+import { createInstance } from 'react-async';
 
-const buy = [
-    {
-        name: 'Wassie 10352', cost: 0.6,
-        img: 'https://img.seadn.io/files/37c1876a5cd53d9c8d0914f73a533018.png?fit=max&w=1000'
-    },
 
-    {
-        name: 'Wassie 2651', cost: 0.6142,
-        img: 'https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'
-    },
+let buy = [];
 
-];
+let sell = [];
 
-const sell = [
-    {
-        name: '#80', cost: 0.085,
-        img: 'https://i.seadn.io/gae/tk8c7kTX_euzFuLP_6rl_f_1ZPMMFNEEu5AqjdlzMOzl0zzbfIqyKZAkVetmToq299M1ger-k9D0F7Pyaoe9ndf_aEj6UHnhWnq-fg?auto=format&w=512'
-    },
-
-    {
-        name: '7330', cost: 58.300,
-        img: 'https://img.seadn.io/files/f4e7af0cf0d55d6529e43efbb68427ea.png?auto=format&fit=max&w=512'
-    },
-
-    {
-        name: 'Pudgy Penguin #3139', cost: 2.5946,
-        img: 'https://img.seadn.io/files/82f60175d1c642299b0e4c8aa8ea7d14.png?auto=format&fit=max&w=512'
-    },
-
-];
-
+let buy_tokenId = [];
+let sell_tokenId = [];
 const featuredPosts = [
     {
         title: '호가 내역',
@@ -121,6 +97,8 @@ const useStyles = makeStyles(() => ({
     },
 }));
 const useLabelStyles = makeStyles(bootstrapLabelStyles);
+let cosignedAuctionInstances = [];
+
 
 export default function Blog() {
 
@@ -128,8 +106,6 @@ export default function Blog() {
 
     //로그인
     const [isLogin, setLogin] = React.useState(false);
-    const [accountLoaded, setAccountLoaded] = React.useState(false);
-
 
     //login modal
     const [modalOpen, setOpen] = React.useState(false);
@@ -141,26 +117,26 @@ export default function Blog() {
         setOpen(true);
     };
 
-
-    //login창
-    const startLogin = async (e) => {
-        setAccountLoaded(false);
-
-
-        loadAccount()
-            .then(() => {
-                loadContract()
-            })
-    };
-
     const [account, setAccount] = React.useState();
+    const accountRef = React.useRef();
+    accountRef.current = account;
     const [contract, setContract] = React.useState();
     const [auctionInstances, setAuctionInstances] = React.useState([]);
     const [newAuctionName, setNewAuctionName] = React.useState('');
     const [startingPrice, setStartingPrice] = React.useState(0);
+
+    React.useEffect(() => {
+        if (typeof account !== 'undefined') {
+            loadContract(contract);
+        }
+    }, [account]);
+
+    //login창
+    const startLogin = async (e) => {
+        loadAccount();
+    };
     
     async function loadAccount() {
-
         if (typeof window.ethereum == 'undefined') {
             console.log('There is no wallets')
             window.open('https://metamask.io/download/').focus()
@@ -178,12 +154,10 @@ export default function Blog() {
             params: [{ eth_accounts: {} }],
         }).then((permissions) => {
             setAccount(permissions[0].caveats[0].value[0])
-            setAccountLoaded(true)
 
             window.ethereum.on('accountsChanged', function (accounts) {
                 setAccount(accounts[0])
             })
-
             handleClose()
         })
     }
@@ -202,35 +176,33 @@ export default function Blog() {
 
     async function loadAuctionInstances(contract) {
         setAuctionInstances([])
-        const auctionInstanceCount = await contract.methods.auctionInstanceCount().call()
-
-        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionInstanceCount = await contract.methods.auctionInstanceCount().call();
         
         for (var i = 0; i < auctionInstanceCount; i++) {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
-            // const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
-            // const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
-            // const ipfsAddress = result.replace("ipfs://", "https://ipfs.io/ipfs/");
-            // //console.log(ipfsAddress);
-
-            // fetch(ipfsAddress)
-            // .then(response => response.json())
-            // .then(data => {
-            //     //console.log(data);
-            //     const imageIpfsAddress = data.image.replace("ipfs://", "https://ipfs.io/ipfs/");
-            //     fetch(imageIpfsAddress)
-            //     .then(imageData => {
-            //         //console.log(imageData);
-            //     });
-            // }); 
         }
-        // console.log(auctionInstances);        
+        
+        // cosignedAuctionInstances = await getCosignedAuctionInstances(contract);
+        // console.log(cosignedAuctionInstances);
+        // const biddedAuctionInstances = await getBiddedAuctionInstances(contract);
+        // console.log(biddedAuctionInstances);
     }
 
     function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
         contract.methods.createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime)
             .send({ from: account })
+    }
+//     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
+//     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
+    
+    async function getCosignedAuctionInstances(contract){
+        const result = await contract.methods.getCosignedAuctionInstances().call({from: account});
+        return result;
+    }
+
+    async function getBiddedAuctionInstances(contract){
+        return await contract.methods.getBiddedAuctionInstances().call({from: account});
     }
 
     const navigate = useNavigate();
@@ -269,7 +241,6 @@ export default function Blog() {
     const registerCloseCancel = () => {
         var dueDate = dueDayValue + "T23:59:59.000Z";
         var date = new Date(dueDate).getTime();
-        console.log(new Date(date));
         setRegisterOpen(false);
     }
 
@@ -281,7 +252,86 @@ export default function Blog() {
         createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), date);
 
     }
+    async function myInfoLoading() {
+        
 
+        sell_tokenId = await getCosignedAuctionInstances(contract);
+        console.log(sell_tokenId)
+;        var sell_Count = sell_tokenId.length;
+
+        //Sell
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const auctionContract = new web3.eth.Contract(AUCTION_ABI, AUCTION_ADDRESS)
+        
+        for (var i = 0; i < sell_Count; i++) {
+            let tmp = {};
+            const nftContract = await new web3.eth.Contract(TOKENURIABI, sell_tokenId[i].tokenAddress);
+            tmp['tokenId'] = sell_tokenId[i].tokenId;
+            tmp['tokenAddress'] = sell_tokenId[i].tokenAddress;
+            tmp['cost'] = sell_tokenId[i].highestBid;
+            tmp['endTime'] = sell_tokenId[i].auctionEndTime;
+            tmp['id'] = sell_tokenId[i].id;
+            tmp['account'] = accountRef.current;
+            
+
+            await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+            const result = await nftContract.methods.tokenURI(sell_tokenId[i].tokenId).call();
+
+            const ipfsAddress = await result.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const response = await fetch(ipfsAddress);
+            const res_json = await response.json();
+            tmp['name'] = res_json['name'];
+
+            const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const imageData = await fetch(imageIpfsAddress);
+            const _img = await imageData.url;
+
+            tmp['img'] = _img;
+            if(sell.findIndex(e => e.id === tmp['id']) === -1) sell.push(tmp);
+        }
+
+
+        //BUY
+        buy_tokenId = await getBiddedAuctionInstances(contract);
+        await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+        var buy_Count = buy_tokenId.length;
+        console.log(buy_tokenId);
+        for (var i = 0; i < buy_Count; i++) {
+            let tmp = {};
+            const nftContract = await new web3.eth.Contract(TOKENURIABI, buy_tokenId[i].tokenAddress);
+            tmp['tokenId'] = buy_tokenId[i].tokenId;
+            tmp['tokenAddress'] = buy_tokenId[i].tokenAddress;
+            tmp['cost'] = buy_tokenId[i].highestBid;
+            tmp['endTime'] = buy_tokenId[i].auctionEndTime;
+            tmp['id'] = buy_tokenId[i].id;
+            tmp['account'] = accountRef.current;
+            
+
+            await new Promise((resolve, reject) => setTimeout(resolve, 1000));
+            const result = await nftContract.methods.tokenURI(buy_tokenId[i].tokenId).call();
+
+            const ipfsAddress = await result.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const response = await fetch(ipfsAddress);
+            const res_json = await response.json();
+            tmp['name'] = res_json['name'];
+
+            const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
+    
+            const imageData = await fetch(imageIpfsAddress);
+            const _img = await imageData.url;
+
+            tmp['img'] = _img;
+            console.log()
+            if(buy.findIndex(e => e.id === tmp['id']) === -1) buy.push(tmp);
+
+        }
+
+    }
+
+    const AsyncPlayer = createInstance({ promiseFn: myInfoLoading }, "AsyncPlayer");
     
     //css
 
@@ -556,16 +606,20 @@ export default function Blog() {
                 <Toolbar></Toolbar>
                 <main>
                     {account != null ? <div>
-                        <Grid container spacing={4} sx={{ height: 300 }}>
+                        <Grid container spacing={4} sx={{ height: 400 }}>
+                        <AsyncPlayer>
+                            <AsyncPlayer.Fulfilled>
                             {featuredPosts.map((post) => (
-                                <FeaturedPost key={post.title} post={post} />
+                                <FeaturedPost key={post.title} post={post} account = {accountRef.current}/>
                             ))}
+                            </AsyncPlayer.Fulfilled>
+                        </AsyncPlayer>
                         </Grid>
-                        <Grid sx={{ mb: 10 }}></Grid>
+                        <Grid sx={{ mb: 5 }}></Grid>
                     </div> : null}
 
-                    <Grid container spacing={5} >
-                        <Main title="전체 상품 보기" />
+                    <Grid container spacing={10} >
+                        <Main title="전체 상품 보기"/>
 
                     </Grid>
 
