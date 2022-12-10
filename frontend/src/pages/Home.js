@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
 
 import CssBaseline from '@mui/material/CssBaseline';
 import Grid from '@mui/material/Grid';
@@ -182,16 +182,38 @@ export default function Blog() {
             const auctionInstance = await contract.methods.getAuctionInstance(i).call();
             setAuctionInstances((auctionInstances) => [...auctionInstances, auctionInstance])
         }
-        
-        // cosignedAuctionInstances = await getCosignedAuctionInstances(contract);
-        // console.log(cosignedAuctionInstances);
-        // const biddedAuctionInstances = await getBiddedAuctionInstances(contract);
-        // console.log(biddedAuctionInstances);
     }
 
-    function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
-        contract.methods.createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime)
-            .send({ from: account })
+    // async function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime) {
+    //     const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+    //     const tokenContract = new web3.eth.Contract(ERC721_ABI, tokenAddress);
+    //     await tokenContract.methods.approve(AUCTION_ADDRESS, tokenId).send({ from: account })
+    //     .then(() => {
+    //         contract.methods.createAuctionInstance(tokenAddress, tokenId, web3.utils.toWei(String(startingPrice)), auctionEndTime).send({ from: account })
+    //     })
+    // }
+
+    async function approveAccount(tokenAddress, tokenId, startingPrice, auctionEndTime){
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
+        const tokenContract = new web3.eth.Contract(ERC721_ABI, tokenAddress);
+        await tokenContract.methods.approve(AUCTION_ADDRESS, tokenId).send({ from: account });
+    }
+
+    async function createAuctionInstance(tokenAddress, tokenId, startingPrice, auctionEndTime){
+        const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545');
+        const tokenContract = new web3.eth.Contract(ERC721_ABI, tokenAddress);
+        await contract.methods.createAuctionInstance(tokenAddress, tokenId, web3.utils.toWei(String(startingPrice)), auctionEndTime).send({ from: account });
+    }
+//     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
+//     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
+    
+    async function getCosignedAuctionInstances(contract){
+        const result = await contract.methods.getCosignedAuctionInstances().call({from: account});
+        return result;
+    }
+
+    async function getBiddedAuctionInstances(contract){
+        return await contract.methods.getBiddedAuctionInstances().call({from: account});
     }
 //     getCosignedAuctionInstances() 로 내가 출품했던 경매의 목록을,
 //     getBiddedAuctionInstances()로 내가 호가했던 경매의 목록을 가져올 수 있습니다
@@ -235,29 +257,44 @@ export default function Blog() {
         setRegisterValue({...registerValue, [event.target.id]:event.target.value,});
     };
 
+    const [agree,setAgree] = React.useState(false);
+
     const registerClick = () => {
         setRegisterOpen(true);
     };
     const registerCloseCancel = () => {
-        var dueDate = dueDayValue + "T23:59:59.000Z";
-        var date = new Date(dueDate).getTime();
-        setRegisterOpen(false);
+       setRegisterOpen(false);
     }
 
     const registerClose_R = () => {
-        setRegisterOpen(false);
-        var dueDate = dueDayValue + "T23:59:59.000Z";
-        var date = new Date(dueDate).getTime();
         
-        createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), date);
+        var dueDate = dueDayValue + "T23:59:59.000Z";
+        var unixTime = Math.floor((new Date(dueDate).getTime()) / 1000);
+        
+        if(agree == true){
+            setRegisterOpen(false);
+            createAuctionInstance(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), unixTime);
+        }
+        else{
+            alert("판매 동의를 해주십시오.");
+        }
+        
+    }
+
+    
+
+    const approve = async() =>{
+       setAgree(!agree);
+       var dueDate = dueDayValue + "T23:59:59.000Z";
+        var unixTime = Math.floor((new Date(dueDate).getTime()) / 1000);
+       approveAccount(registerValue.tokenAddress, Number(registerValue.tokenId), Number(registerValue.bid), unixTime);
 
     }
     async function myInfoLoading() {
         
 
         sell_tokenId = await getCosignedAuctionInstances(contract);
-        console.log(sell_tokenId)
-;        var sell_Count = sell_tokenId.length;
+        var sell_Count = sell_tokenId.length;
 
         //Sell
         const web3 = new Web3(Web3.givenProvider || 'https://localhost:7545')
@@ -265,7 +302,7 @@ export default function Blog() {
         
         for (var i = 0; i < sell_Count; i++) {
             let tmp = {};
-            const nftContract = await new web3.eth.Contract(TOKENURIABI, sell_tokenId[i].tokenAddress);
+            const nftContract = await new web3.eth.Contract(ERC721_ABI, sell_tokenId[i].tokenAddress);
             tmp['tokenId'] = sell_tokenId[i].tokenId;
             tmp['tokenAddress'] = sell_tokenId[i].tokenAddress;
             tmp['cost'] = sell_tokenId[i].highestBid;
@@ -297,10 +334,9 @@ export default function Blog() {
         buy_tokenId = await getBiddedAuctionInstances(contract);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         var buy_Count = buy_tokenId.length;
-        console.log(buy_tokenId);
         for (var i = 0; i < buy_Count; i++) {
             let tmp = {};
-            const nftContract = await new web3.eth.Contract(TOKENURIABI, buy_tokenId[i].tokenAddress);
+            const nftContract = await new web3.eth.Contract(ERC721_ABI, buy_tokenId[i].tokenAddress);
             tmp['tokenId'] = buy_tokenId[i].tokenId;
             tmp['tokenAddress'] = buy_tokenId[i].tokenAddress;
             tmp['cost'] = buy_tokenId[i].highestBid;
@@ -324,12 +360,12 @@ export default function Blog() {
             const _img = await imageData.url;
 
             tmp['img'] = _img;
-            console.log()
             if(buy.findIndex(e => e.id === tmp['id']) === -1) buy.push(tmp);
 
         }
 
     }
+    
 
     const AsyncPlayer = createInstance({ promiseFn: myInfoLoading }, "AsyncPlayer");
     
@@ -389,11 +425,11 @@ export default function Blog() {
                                 sx={{ display: 'flex', alignItems: 'center', width: 900 }}
                             >
                                 <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
-                                    <SearchIcon />
+                                    
                                 </IconButton>
                                 <InputBase
                                     sx={{ ml: 1, flex: 1 }}
-                                    placeholder="어떤 컬렉션을 찾으세요?"
+                                    placeholder=""
                                     inputProps={{ 'aria-label': 'search google maps' }}
                                     fullWidth
                                 />
@@ -481,12 +517,7 @@ export default function Blog() {
                                     <DialogTitle id="form-dialog-title">상품 등록</DialogTitle>
                                     <DialogContent>
                                         <Row sx={{ width: '100%' }}>
-                                            {/* <CardMedia
-                                                component="img"
-                                                sx={{ width: 200, alignItems: 'center' }}
-                                                image='https://img.seadn.io/files/8c3be0288c1053f14d6289cbb919249b.png?auto=format&fit=max&w=512'
-                                                alt="Live from space album cover"
-                                            /> */}
+                                            
                                             <Column sx={{ marginLeft: 20, width: '100%' }}>
                                                 <Row>
                                                     <Grid item xs={12} sm={6}>
@@ -534,7 +565,7 @@ export default function Blog() {
                                                     required
                                                     id="bid"
                                                     name="bid"
-                                                    label="시작가 (ETH)"
+                                                    label="시작가 (MATIC)"
                                                     fullWidth
                                                     autoComplete="shipping address-level2"
                                                     variant="standard"
@@ -581,7 +612,7 @@ export default function Blog() {
                                             </Grid>
                                             <Grid item xs={12}>
                                                 <FormControlLabel
-                                                    control={<Checkbox color="primary" name="saveAddress" value="yes" />}
+                                                    control={<Checkbox color="primary" name="saveAddress" value="yes" onChange={approve} />}
                                                     label="상기 정보를 확인하였고, 판매 등록에 동의합니다." />
                                             </Grid>
                                         </Grid>
@@ -616,12 +647,26 @@ export default function Blog() {
                         </AsyncPlayer>
                         </Grid>
                         <Grid sx={{ mb: 5 }}></Grid>
-                    </div> : null}
-
-                    <Grid container spacing={10} >
+                        <Grid container spacing={10} >
                         <Main title="전체 상품 보기"/>
 
                     </Grid>
+                    </div> : <div>
+                        <Grid container spacing={4} sx={{height:400}}>
+                        {featuredPosts.map((post) => (
+                                <FeaturedPost key={post.title} post={post} account = {accountRef.current}/>
+                            ))}
+                            </Grid>
+                            <Grid sx={{ mb: 5 }}></Grid>
+                        <Grid container spacing={20} >
+                        <Main title="전체 상품 보기"/>
+    
+                        </Grid>
+                        <Grid sx={{ mb: 3 }}></Grid>
+                        <Item sx={{ width:"70%",bgcolor:'#dcdcdc',textAlign:'center',borderRadius:'12px',border:"solid 20px #dcdcdc"}}>지갑 연결 후 이용 가능합니다.</Item>
+                        </div>}
+
+                    
 
                     {auctionInstances.length == 0? null : <Listup key="list" list={auctionInstances} account = {account}/>}
 

@@ -22,7 +22,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS } from '../config'
 
 let type;
 
@@ -94,33 +94,31 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
   const avatarStyles = useDynamicAvatarStyles({ size: 56 });
   const styles = usePersonStyles();
   let isFinish = false;
-  now = + new Date();
 
+  let tmpBid = bid;
+  bid = bid/(10**18);
+  
   const [endOpen,setEnd] = React.useState(false);
 
-  if(Number(endTime) <= Number(now)) isFinish = true;
-
+  if(new Date(endTime * 1000) <= Date.now()) isFinish = true;
+  
+  let buttonText = "";
+  if(itemType == 0){
+    buttonText = "지불";
+  }
+  else{
+    buttonText = "낙찰가 회수";
+  }
   const navigate = useNavigate();
 
-  console.log(itemType);
   const afterEnd = async (e) =>{
-    console.log("afterEnd in");
     //type : 0 호가 내역이므로 token을 내는 함수가 작동하고
     //type : 1 등록 내역이므로 낙찰가를 회수하는 함수가 작동
     if(itemType == 0){
-      //alert("receive");
-      // console.log("token id :"+tokenId);
-      // console.log("bid :"+bid);
-      // console.log("name :"+name);
-      // console.log("tokenAddress :"+tokenAddress);
-      // console.log("endTime :"+endTime);
-      // console.log("account :"+account);
-      // console.log("id :"+id);
-      await auctionContract.methods.receiveToken(id).call();
+      await auctionContract.methods.receiveToken(id).send({from: account, value: Number(tmpBid)});
     }
     else{
-      //alert("widthdraw");
-      await auctionContract.methods.widthdrawFromAuctionInstance(id).call();
+      await auctionContract.methods.widthdrawFromAuctionInstance(id).send({from: account});
       
     }
   };
@@ -136,7 +134,8 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
 
   const endOK = async(e)=>{
     setEnd(false);
-    await auctionContract.methods.endAuction(id).call();
+    await auctionContract.methods.endAuction(id).send({from: account});
+
   }
 
   return (
@@ -149,7 +148,7 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
         <Item grow minWidth={0}>
           <div className={cx(styles.name, styles.text)}>{name}</div>
           <div className={cx(styles.caption, styles.text)}>
-            {bid} ETH
+            {bid} MATIC
           </div>
         </Item>
         <Item position={'middle'}>
@@ -193,7 +192,7 @@ const PersonItem = ({ itemType,name, bid, img,tokenId, tokenAddress, endTime,id,
           </Button>
         </DialogActions>
       </Dialog></div> : <Tooltip title="호가한 상품 : 낙찰 & 등록한 상품 : 낙찰가 회수">
-            <Button className={styles.withdraw_btn} variant={'outlined'} onClick={afterEnd}> 경매 종료
+            <Button className={styles.withdraw_btn} variant={'outlined'} onClick={afterEnd}> {buttonText}
             </Button>
             </Tooltip>}
             
@@ -256,8 +255,6 @@ function FeaturedPost(props) {
   }
   
 
-  console.log(show_list);
-  // console.log(post.list);
   const {account} = props;
 
   const navigate = useNavigate();
@@ -280,7 +277,13 @@ function FeaturedPost(props) {
           </Item>
         </Row>
        
-        {(show_list).map(({type,name,cost,img,tokenId,tokenAddress,endTime,id,account}) => (<PersonItem key={name} itemType={type}name={name} bid = {cost} img={img} tokenId={tokenId} tokenAddress = {tokenAddress} endTime = {endTime} id = {id} account = {account} />))}
+        {account != null?
+        (show_list).map(({type,name,cost,img,tokenId,tokenAddress,endTime,id,account}) => (<PersonItem key={name} itemType={type}name={name} bid = {cost} img={img} tokenId={tokenId} tokenAddress = {tokenAddress} endTime = {endTime} id = {id} account = {account} />)):
+        <Column gap={5} p={3} sx={{alignItems:'center'}}>
+          <Item ></Item>
+          <Item ></Item>
+          <Item sx={{bgcolor:'#dcdcdc' , width:"90%", textAlign:'center',border:"solid 5px #dcdcdc",borderRadius:'12px'}}>지갑 연결 후 이용 가능합니다.</Item>
+           </Column>}
       </Column>
       </Container>
       </Grid>

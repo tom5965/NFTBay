@@ -1,6 +1,8 @@
 import * as React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
+
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Toolbar from '@mui/material/Toolbar';
@@ -170,7 +172,7 @@ async function load(){
         tmp['highestBid'] = list[i].highestBid;
         tmp['id'] = list[i].id;
 
-        const nftContract = new web3.eth.Contract(TOKENURIABI, list[i].tokenAddress);
+        const nftContract = new web3.eth.Contract(ERC721_ABI, list[i].tokenAddress);
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         const result = await nftContract.methods.tokenURI(list[i].tokenId).call();
         // { tokenId, tokenAddress, highestBid, auctionEndTime, id }
