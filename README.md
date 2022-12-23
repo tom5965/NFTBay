@@ -13,6 +13,7 @@
 1. 프로젝트 파일을 다운받는다.
 2. cd frontend 를 통해 frontedn directory로 이동한다.
 3. terminal에 npm install을 입력하여 nodule_modules를 설치한다.
-4. 로컬 웹서버 (localhost:3000) 로 테스트할 수 있다. 
+4. terminal에 npm start를 입력하여 로컬 웹서버를 시작한다.
+5. 로컬 웹서버 (localhost:3000) 로 테스트할 수 있다. 
 ```
 
