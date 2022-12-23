@@ -1,6 +1,6 @@
 import React from 'react';
 import Web3 from 'web3'
-import { AUCTION_ABI, AUCTION_ADDRESS, TOKENURIABI } from '../config'
+import { AUCTION_ABI, AUCTION_ADDRESS, ERC721_ABI } from '../config'
 
 import NoSsr from '@material-ui/core/NoSsr';
 import GoogleFontLoader from 'react-google-font-loader';
@@ -83,6 +83,7 @@ const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime, id, accou
     const avatarStyles = useGrowAvatarStyles({ src, ...commonProps });
     const navigate = useNavigate();
 
+    highestBid = highestBid/(10**18);
 
     const styles = useStyles();
     const tmpName = name[num];
@@ -109,7 +110,7 @@ const ListItem = ({ tokenId, tokenAddress, highestBid, auctionEndTime, id, accou
                 {/* <h4>{name[num-1]}</h4> */}
             </Info>
             <Info useStyles={useMusicInfoStyles} position={'right'}>
-                <InfoSubtitle> <h4>{highestBid} WEI</h4></InfoSubtitle>
+                <InfoSubtitle> <h4>{highestBid} MATIC</h4></InfoSubtitle>
             </Info>
             <Info>
 
@@ -147,7 +148,9 @@ async function loading() {
 
     for (var i = 0; i < auctionInstanceCount; i++) {
         const auctionInstance = await auctionContract.methods.getAuctionInstance(i).call();
-        const nftContract = new web3.eth.Contract(TOKENURIABI, auctionInstance.tokenAddress);
+
+        const nftContract = new web3.eth.Contract(ERC721_ABI, auctionInstance.tokenAddress);
+
         await new Promise((resolve, reject) => setTimeout(resolve, 1000));
         const result = await nftContract.methods.tokenURI(auctionInstance.tokenId).call();
 
@@ -157,7 +160,6 @@ async function loading() {
         const res_json = await response.json();
 
         name.push(res_json.name);
-
         const imageIpfsAddress = await res_json.image.replace("ipfs://", "https://ipfs.io/ipfs/");
 
         const imageData = await fetch(imageIpfsAddress);
